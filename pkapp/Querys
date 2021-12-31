@@ -1,0 +1,55 @@
+-- Classificação sem descartes
+
+SELECT p.player, SUM (pontuacao) AS total
+	FROM pkapp_ranking r, pkapp_players p
+	WHERE id_torneio_id =3
+	  and r.id_player_id = p.id
+	GROUP BY p.player
+	ORDER BY total DESC;
+
+-- Participações
+
+  SELECT p.player, SUM (buy_inn) AS total
+  FROM pkapp_ranking r, pkapp_players p
+  WHERE id_torneio_id =3
+    and r.id_player_id = p.id
+  GROUP BY p.player
+  ORDER BY total DESC;
+
+-- Jackpot
+
+SELECT sum(buy_inn + qtd_rebuy)
+	FROM pkapp_ranking
+	WHERE id_torneio_id = 3
+
+
+-- Etapas com descarte analitico
+--
+select p.player, x.pontuacao
+  from (
+     select id_player_id, pontuacao, row_number() over
+            (partition by id_player_id order by pontuacao desc)
+       from pkapp_ranking r
+      where r.id_torneio_id = 3
+  ) x, pkapp_players p
+ where x.id_player_id = p.id
+   and x.row_number <= 9
+ order by player, pontuacao desc
+ 
+-- Etapas com descarte sintetico
+--
+select p.player, sum(x.pontuacao) as pontos
+  from (
+     select id_player_id, pontuacao, row_number() over
+            (partition by id_player_id order by pontuacao desc)
+       from pkapp_ranking r
+      where r.id_torneio_id = 3
+  ) x, pkapp_players p
+ where x.id_player_id = p.id
+   and x.row_number <= 9
+ group by player
+ order by pontos desc
+ 
+   
+
+

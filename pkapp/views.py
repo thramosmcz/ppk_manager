@@ -1,4 +1,5 @@
 from django.shortcuts import render, redirect
+from django.http import HttpResponse
 from .models import Players, Torneios, Etapas, Ranking
 from .forms import PlayersForm, TorneiosForm, EtapasForm, TorneiosRanking, AdmEtapaForm
 
@@ -54,5 +55,9 @@ def pkapp_torneios(request):
 
 
 def pkapp_ranking(request):
+    teste = 'Conteudo de ranking'
+    return render(request, 'pkapp/ranking.html', {'teste': teste})
+
+def pontuacao_global(request):
     teste = 'Conteudo de ranking'
     return render(request, 'pkapp/ranking.html', {'teste': teste})

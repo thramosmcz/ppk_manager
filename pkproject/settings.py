@@ -84,16 +84,7 @@ DATABASES = {
         'USER': 'tournament',
         'PASSWORD': 'senha@123',
         'HOST': '127.0.0.1',
-        'PORT': '5433',
-        'CONN_MAX_AGE': 500,
-        },
-    'fmb': {
-        'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'pktour',
-        'USER': 'pktour',
-        'PASSWORD': 'senha@123',
-        'HOST': '127.0.0.1',
-        'PORT': '5433',
+        'PORT': '5432',
         'CONN_MAX_AGE': 500,
     }
 

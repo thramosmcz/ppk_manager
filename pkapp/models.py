@@ -44,8 +44,8 @@ class Etapas(models.Model):
 
 
 class Ranking(models.Model):
-    id_etapa = models.ForeignKey('Etapas', on_delete=models.PROTECT)
     id_torneio = models.ForeignKey('Torneios', on_delete=models.PROTECT)
+    id_etapa = models.ForeignKey('Etapas', on_delete=models.PROTECT)
     id_player = models.ForeignKey('Players', on_delete=models.PROTECT)
     buy_inn = models.IntegerField()
     qtd_rebuy = models.IntegerField()
@@ -54,4 +54,23 @@ class Ranking(models.Model):
     premio = models.DecimalField(max_digits=7, decimal_places=2)
 
     def __str__(self):
-        return self.id
+        return str(self.id)
+
+class RankingTorneio(models.Model):
+    id_torneio = models.ForeignKey('Torneios', on_delete=models.PROTECT)
+    id_player  = models.ForeignKey('Players', on_delete=models.PROTECT)
+    row_number = models.IntegerField()
+    pontuacao = models.IntegerField()
+
+    objects = models.Manager().raw(
+             'select id_player_id, pontuacao, row_number() over '
+                    '(partition by id_player_id order by pontuacao desc) '
+               'from pkapp_ranking')
+
+    def __str__(self):
+        return str(self.id_torneio)
+
+    class Meta:
+        abstract = True
+        managed  = False
+

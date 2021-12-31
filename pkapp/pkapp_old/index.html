@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<title>PKTOUR - Página Inicial</title>
+
+{% extends 'base.html' %}
+<head>
+	
+</head>
+<body> 
+
+{% block menu%}
+	<ul class="nav nav-pills">
+	  <li class="nav-item">
+	    <a class="nav-link active" href="{% url 'pkapp_index' %}">Home</a>
+	  </li>
+	  <li class="nav-item dropdown">
+	    <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Opçoes</a>
+	    <div class="dropdown-menu">
+	      <a class="dropdown-item" href="{% url 'pkapp_players' %}">Players</a>
+	      <div class="dropdown-divider"></div>
+	      <a class="dropdown-item" href="#">Torneios</a>
+	      <div class="dropdown-divider"></div>
+	      <a class="dropdown-item" href="#">Etapas</a>
+	    </div>
+	  </li>
+	  <li class="nav-item dropdown">
+	    <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Consultas</a>
+	    <div class="dropdown-menu">
+	      <a class="dropdown-item" href="{% url 'pkapp_ranking' %}">Ranking</a>
+	   </li>
+<!--	  <li class="nav-item">
+	    <a class="nav-link" href="#">Link</a>
+	  </li>
+	  <li class="nav-item">
+	    <a class="nav-link disabled" href="#">Disabled</a>
+	  </li>-->
+	</ul>
+{% endblock %}
+
+{%block main%} <!--uso de blocks baseado em modelo/herança (pktour/templates/base.html
+
+	<h1>teste de template</h1>
+	{{vlrtemplate}}-->
+
+{% endblock %}
+
+
+</body>
+</html>
