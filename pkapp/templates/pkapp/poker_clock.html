@@ -1,0 +1,802 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Poker Clock - {{ torneio.torneio }} - {{ etapa.etapa }}</title>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      background: linear-gradient(135deg, #0a1929 0%, #16213e 100%);
+      color: #e0e0e0;
+      font-family: 'Segoe UI', sans-serif;
+      overflow: hidden;
+      height: 100vh;
+    }
+    .container {
+      display: grid;
+      grid-template-columns: 300px 1fr 300px;
+      grid-template-rows: 120px 1fr;
+      gap: 20px;
+      padding: 20px;
+      height: 100vh;
+    }
+    .header {
+      grid-column: 1 / -1;
+      background: linear-gradient(135deg, #1a2332 0%, #0f1922 100%);
+      border: 2px solid #c9a84c;
+      border-radius: 12px;
+      padding: 20px;
+      text-align: center;
+      box-shadow: 0 8px 32px rgba(201, 168, 76, 0.2);
+    }
+    .title {
+      font-size: 2.5rem;
+      font-weight: bold;
+      color: #c9a84c;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+      text-shadow: 0 0 20px rgba(201, 168, 76, 0.5);
+    }
+    .subtitle {
+      font-size: 1rem;
+      color: #aaa;
+      margin-top: 8px;
+      letter-spacing: 2px;
+    }
+    .panel {
+      background: rgba(22, 33, 62, 0.8);
+      border: 1px solid #c9a84c33;
+      border-radius: 12px;
+      padding: 20px;
+      overflow-y: auto;
+    }
+    .panel-title {
+      font-size: 1.2rem;
+      color: #c9a84c;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      border-bottom: 2px solid #c9a84c44;
+      padding-bottom: 10px;
+      margin-bottom: 15px;
+    }
+    .stat {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 0;
+      border-bottom: 1px solid #ffffff11;
+    }
+    .stat-label { color: #aaa; font-size: 0.9rem; }
+    .stat-value { color: #e0e0e0; font-weight: bold; font-size: 1rem; }
+    .center-panel {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      background: linear-gradient(135deg, #1a2332 0%, #0f1922 100%);
+      border: 3px solid #c9a84c;
+      border-radius: 12px;
+      box-shadow: 0 8px 32px rgba(201, 168, 76, 0.3);
+      position: relative;
+      overflow: hidden;
+    }
+    /* Barra de bateria */
+    #battery-bar {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      transition: height 1s linear, background-color 1s linear;
+      opacity: 0.15;
+      z-index: 0;
+      transform-origin: bottom;
+    }
+    .center-panel > * { position: relative; z-index: 1; }
+    .level-label {
+      font-size: 1.5rem;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 3px;
+    }
+    .blinds {
+      font-size: 5rem;
+      font-weight: bold;
+      color: #c9a84c;
+      margin: 20px 0;
+      text-shadow: 0 0 30px rgba(201, 168, 76, 0.6);
+    }
+    .ante {
+      font-size: 1.2rem;
+      color: #aaa;
+      margin-bottom: 30px;
+    }
+    .timer {
+      font-size: 8rem;
+      font-weight: bold;
+      color: #e0e0e0;
+      font-family: 'Courier New', monospace;
+      text-shadow: 0 0 40px rgba(255, 255, 255, 0.3);
+    }
+    .timer.warning { color: #ff9800; }
+    .timer.danger { color: #f44336; animation: pulse 1s infinite; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.6; }
+    }
+    .next-blinds {
+      font-size: 1.5rem;
+      color: #aaa;
+      margin-top: 20px;
+    }
+    .next-blinds span { color: #c9a84c; font-weight: bold; }
+    .player-list {
+      max-height: calc(100vh - 200px);
+      overflow-y: auto;
+    }
+    .player-item {
+      padding: 10px;
+      margin: 5px 0;
+      background: rgba(201, 168, 76, 0.1);
+      border-left: 3px solid #c9a84c;
+      border-radius: 4px;
+      font-size: 0.95rem;
+    }
+    .player-item.eliminated {
+      opacity: 0.5;
+      border-left-color: #666;
+    }
+    .player-name { color: #e0e0e0; font-weight: bold; }
+    .player-pos { color: #c9a84c; font-size: 0.85rem; }
+    .payout-item {
+      display: flex;
+      justify-content: space-between;
+      padding: 8px 12px;
+      margin: 5px 0;
+      background: rgba(201, 168, 76, 0.1);
+      border-radius: 4px;
+    }
+    .payout-pos { color: #c9a84c; font-weight: bold; }
+    .payout-value { color: #28a745; font-weight: bold; }
+    .controls {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      display: flex;
+      gap: 10px;
+    }
+    .btn {
+      padding: 12px 24px;
+      border: none;
+      border-radius: 8px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .btn-play { background: #28a745; color: white; }
+    .btn-pause { background: #ff9800; color: white; }
+    .btn-reset { background: #f44336; color: white; }
+    .btn-prev { background: #0f3460; color: #c9a84c; border: 1px solid #c9a84c55; }
+    .btn-next { background: #0f3460; color: #c9a84c; border: 1px solid #c9a84c55; }
+    .btn-break { background: #6c3483; color: white; }
+    .btn-edit { background: #1a2332; color: #c9a84c; border: 1px solid #c9a84c55; }
+    .btn-sound { background: #1a2332; color: #c9a84c; border: 1px solid #c9a84c55; }
+    .btn:hover { transform: scale(1.05); box-shadow: 0 4px 12px rgba(0,0,0,0.3); }
+
+    /* Modal blinds editor */
+    .modal-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.75);
+      z-index: 100;
+      justify-content: center;
+      align-items: center;
+    }
+    .modal-overlay.open { display: flex; }
+    .modal-box {
+      background: #16213e;
+      border: 2px solid #c9a84c55;
+      border-radius: 12px;
+      padding: 28px;
+      width: 90%;
+      max-width: 780px;
+      max-height: 85vh;
+      overflow-y: auto;
+    }
+    .modal-box h2 { color: #c9a84c; margin-bottom: 16px; font-size: 1.2rem; letter-spacing: 2px; }
+    .blinds-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+    .blinds-table th {
+      color: #c9a84c; text-transform: uppercase; letter-spacing: 1px;
+      padding: 8px 6px; border-bottom: 1px solid #c9a84c44; text-align: center;
+    }
+    .blinds-table td { padding: 5px 4px; text-align: center; }
+    .blinds-table tr:hover td { background: #0f3460; }
+    .blinds-table input {
+      width: 90px; background: #0f3460; border: 1px solid #c9a84c33;
+      color: #e0e0e0; border-radius: 4px; padding: 4px 6px; text-align: center;
+    }
+    .blinds-table input:focus { outline: none; border-color: #c9a84c; }
+    .blinds-table .lv { color: #c9a84c; font-weight: bold; }
+    .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 16px; }
+    .btn-sm-modal {
+      padding: 8px 20px; border: none; border-radius: 6px;
+      font-size: 0.9rem; cursor: pointer; transition: all 0.2s;
+    }
+    .btn-sm-modal:hover { transform: scale(1.03); }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="title">{{ torneio.torneio }}</div>
+      <div class="subtitle">{{ etapa.etapa }} &mdash; {{ etapa.local }} &mdash; {{ etapa.data|date:"d-m-Y" }}</div>
+    </div>
+
+    <!-- Left Panel: Stats -->
+    <div class="panel">
+      <div class="panel-title"><i class="fas fa-chart-bar mr-2"></i>Estatísticas</div>
+      <div class="stat">
+        <span class="stat-label">Players Ativos</span>
+        <span class="stat-value" id="stat-ativos">{{ total_ativos }} / {{ total_inscritos }}</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Rebuys</span>
+        <span class="stat-value">{{ total_rebuys }}</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Buy-ins Total</span>
+        <span class="stat-value" style="color:#c9a84c">R$ {{ total_valor_buyins|floatformat:2 }}</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Rebuys Total</span>
+        <span class="stat-value" style="color:#c9a84c">R$ {{ total_valor_rebuys|floatformat:2 }}</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Jackpot</span>
+        <span class="stat-value" style="color:#ff9800">R$ {{ jackpot|floatformat:2 }}</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Prize Pool</span>
+        <span class="stat-value" style="color:#28a745">R$ {{ prizepool|floatformat:2 }}</span>
+      </div>
+    </div>
+
+    <!-- Center Panel: Clock -->
+    <div class="center-panel">
+      <div id="battery-bar"></div>
+      <div class="level-label">Level <span id="level-num">1</span></div>
+      <div class="blinds" id="blinds">10 / 20</div>
+      <div class="ante" id="ante">Ante 0</div>
+      <div class="timer" id="timer">20:00</div>
+      <div class="next-blinds">Next Blinds: <span id="next-blinds">—</span></div>
+      <div id="break-countdown" style="margin-top:12px;font-size:1rem;color:#6c3483;display:none">
+        <i class="fas fa-coffee mr-1"></i> Break em: <span id="break-time-left">—</span>
+      </div>
+    </div>
+
+    <!-- Right Panel: Players & Payouts -->
+    <div class="panel">
+      <div class="panel-title"><i class="fas fa-users mr-2"></i>Players ({{ total_ativos }} ativos)</div>
+      <div class="player-list">
+        {% for p in ativos %}
+        <div class="player-item">
+          <div class="player-name">{{ p.id_player.player }}</div>
+        </div>
+        {% endfor %}
+        {% if eliminados %}
+        <div style="margin-top:20px;padding-top:10px;border-top:1px solid #c9a84c44">
+          <div style="color:#aaa;font-size:0.85rem;margin-bottom:10px">ELIMINADOS</div>
+          {% for p in eliminados %}
+          <div class="player-item eliminated">
+            <div class="player-name">{{ p.id_player.player }}</div>
+            <div class="player-pos">{{ p.posicao }}º lugar</div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+
+      <div style="margin-top:20px;border-top:2px solid #c9a84c44;padding-top:15px">
+        <div class="panel-title" style="border:none;margin-bottom:10px"><i class="fas fa-trophy mr-2"></i>Payouts</div>
+        <div class="payout-item">
+          <span class="payout-pos"><i class="fas fa-trophy" style="color:#FFD700"></i> 1º</span>
+          <span class="payout-value">R$ {{ payout_1|floatformat:2 }}</span>
+          <span style="color:#aaa;font-size:0.8rem">50%</span>
+        </div>
+        <div class="payout-item">
+          <span class="payout-pos"><i class="fas fa-trophy" style="color:#C0C0C0"></i> 2º</span>
+          <span class="payout-value">R$ {{ payout_2|floatformat:2 }}</span>
+          <span style="color:#aaa;font-size:0.8rem">30%</span>
+        </div>
+        <div class="payout-item">
+          <span class="payout-pos"><i class="fas fa-trophy" style="color:#CD7F32"></i> 3º</span>
+          <span class="payout-value">R$ {{ payout_3|floatformat:2 }}</span>
+          <span style="color:#aaa;font-size:0.8rem">20%</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Controls -->
+  <div class="controls">
+    <button class="btn btn-sound" id="btnSound" title="Configurar sons"><i class="fas fa-volume-up"></i></button>
+    <button class="btn btn-edit" id="btnEditBlinds" title="Editar estrutura de blinds"><i class="fas fa-table"></i></button>
+    <button class="btn btn-prev" id="btnPrev" title="Nível anterior"><i class="fas fa-step-backward"></i></button>
+    <button class="btn btn-play" id="btnPlay"><i class="fas fa-play"></i></button>
+    <button class="btn btn-pause" id="btnPause" style="display:none"><i class="fas fa-pause"></i></button>
+    <button class="btn btn-break" id="btnBreak" title="Iniciar break"><i class="fas fa-coffee"></i> Break</button>
+    <button class="btn btn-next" id="btnNext" title="Próximo nível"><i class="fas fa-step-forward"></i></button>
+    <button class="btn btn-reset" id="btnReset" title="Reiniciar"><i class="fas fa-redo"></i></button>
+  </div>
+
+  <!-- Modal: Configuração de Sons -->
+  <div class="modal-overlay" id="modalSound">
+    <div class="modal-box" style="max-width:480px">
+      <h2><i class="fas fa-volume-up" style="margin-right:8px"></i>Configuração de Sons</h2>
+
+      <div style="margin-bottom:20px">
+        <label style="color:#aaa;font-size:0.8rem;text-transform:uppercase;letter-spacing:1px">Som — 1 minuto restante</label>
+        <div class="d-flex align-items-center mt-2" style="gap:10px">
+          <select id="sel-1min" style="flex:1;background:#0f3460;border:1px solid #c9a84c33;color:#e0e0e0;border-radius:6px;padding:6px 10px">
+            <option value="none">Desativado</option>
+            <option value="beep_low" selected>Beep grave</option>
+            <option value="beep_high">Beep agudo</option>
+            <option value="horn">Buzina</option>
+            <option value="chime">Sino</option>
+          </select>
+          <button class="btn-sm-modal" style="background:#0f3460;color:#c9a84c;border:1px solid #c9a84c44" onclick="previewSound('1min')">▶ Testar</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px">
+        <label style="color:#aaa;font-size:0.8rem;text-transform:uppercase;letter-spacing:1px">Som — Bip nos últimos 10 segundos</label>
+        <div class="d-flex align-items-center mt-2" style="gap:10px">
+          <select id="sel-10sec" style="flex:1;background:#0f3460;border:1px solid #c9a84c33;color:#e0e0e0;border-radius:6px;padding:6px 10px">
+            <option value="none">Desativado</option>
+            <option value="tick" selected>Tick</option>
+            <option value="beep_low">Beep grave</option>
+            <option value="beep_high">Beep agudo</option>
+          </select>
+          <button class="btn-sm-modal" style="background:#0f3460;color:#c9a84c;border:1px solid #c9a84c44" onclick="previewSound('10sec')">▶ Testar</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px">
+        <label style="color:#aaa;font-size:0.8rem;text-transform:uppercase;letter-spacing:1px">Som — Mudança de blind</label>
+        <div class="d-flex align-items-center mt-2" style="gap:10px">
+          <select id="sel-change" style="flex:1;background:#0f3460;border:1px solid #c9a84c33;color:#e0e0e0;border-radius:6px;padding:6px 10px">
+            <option value="none">Desativado</option>
+            <option value="fanfare" selected>Fanfarra</option>
+            <option value="horn">Buzina</option>
+            <option value="chime">Sino</option>
+            <option value="beep_high">Beep agudo</option>
+          </select>
+          <button class="btn-sm-modal" style="background:#0f3460;color:#c9a84c;border:1px solid #c9a84c44" onclick="previewSound('change')">▶ Testar</button>
+        </div>
+      </div>
+
+      <div style="margin-bottom:20px">
+        <label style="color:#aaa;font-size:0.8rem;text-transform:uppercase;letter-spacing:1px">Volume</label>
+        <input type="range" id="volume-slider" min="0" max="100" value="70"
+          style="width:100%;margin-top:8px;accent-color:#c9a84c">
+        <div style="text-align:right;color:#aaa;font-size:0.8rem"><span id="volume-val">70</span>%</div>
+      </div>
+
+      <div class="modal-actions">
+        <button class="btn-sm-modal" id="btnCloseSound" style="background:#c9a84c;color:#1a1a2e;font-weight:bold">
+          <i class="fas fa-save mr-1"></i> Salvar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Editar Estrutura de Blinds -->
+  <div class="modal-overlay" id="modalBlinds">
+    <div class="modal-box">
+      <h2><i class="fas fa-table" style="margin-right:8px"></i>Estrutura de Blinds</h2>
+      <table class="blinds-table">
+        <thead>
+          <tr>
+            <th>Nível</th>
+            <th>Small Blind</th>
+            <th>Big Blind</th>
+            <th>Duração (min)</th>
+            <th>Break após (min)</th>
+          </tr>
+        </thead>
+        <tbody id="blinds-editor-body"></tbody>
+      </table>
+      <div class="modal-actions">
+        <button class="btn-sm-modal" id="btnAddLevel" style="background:#0f3460;color:#c9a84c;border:1px solid #c9a84c44">
+          <i class="fas fa-plus"></i> Adicionar Nível
+        </button>
+        <button class="btn-sm-modal" id="btnSaveBlinds" style="background:#c9a84c;color:#1a1a2e;font-weight:bold">
+          <i class="fas fa-save"></i> Aplicar
+        </button>
+        <button class="btn-sm-modal" id="btnCloseBlinds" style="background:#333;color:#aaa">
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Estrutura de blinds carregada do banco via torneio
+    const BLINDS_RAW = {{ niveis_blinds_json|safe }};
+    const BLINDS_STRUCTURE = BLINDS_RAW.length > 0 ? BLINDS_RAW.map(function(n) {
+      return {
+        level:       n.nivel,
+        sb:          n.small_blind,
+        bb:          n.big_blind,
+        ante:        n.ante,
+        duration:    n.duracao_minutos * 60,
+        breakAfter:  n.break_apos_minutos * 60,
+      };
+    }) : [
+      // fallback padrão se nenhuma estrutura vinculada
+      { level:1, sb:100, bb:200, ante:0, duration:1200, breakAfter:0 },
+    ];
+
+    let currentLevel = 0;
+    let timeLeft = BLINDS_STRUCTURE[0].duration;
+    let timerInterval = null;
+    let isRunning = false;
+    let onBreak = false;
+    let breakTimeLeft = 0;
+
+    // ---- Sistema de Áudio (Web Audio API) ----
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let masterVolume = 0.7;
+
+    // Carrega configuração do servidor ao iniciar
+    function carregarConfigSom() {
+      fetch('/pkapp/api/config/som/', {
+        headers: {'X-CSRFToken': getCookie('csrftoken')}
+      })
+      .then(r => r.json())
+      .then(function(cfg) {
+        document.getElementById('sel-1min').value   = cfg.som_1min;
+        document.getElementById('sel-10sec').value  = cfg.som_10sec;
+        document.getElementById('sel-change').value = cfg.som_mudanca;
+        document.getElementById('volume-slider').value = cfg.volume;
+        document.getElementById('volume-val').textContent = cfg.volume;
+        masterVolume = cfg.volume / 100;
+      });
+    }
+
+    // Salva configuração no servidor
+    function salvarConfigSom() {
+      fetch('/pkapp/api/config/som/', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken')},
+        body: JSON.stringify({
+          som_1min:    document.getElementById('sel-1min').value,
+          som_10sec:   document.getElementById('sel-10sec').value,
+          som_mudanca: document.getElementById('sel-change').value,
+          volume:      parseInt(document.getElementById('volume-slider').value),
+        })
+      });
+    }
+
+    function playTone(type, freq, duration, gainVal) {
+      const ctx = audioCtx;
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = type;
+      osc.frequency.setValueAtTime(freq, ctx.currentTime);
+      gain.gain.setValueAtTime(gainVal * masterVolume, ctx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + duration);
+    }
+
+    const SOUNDS = {
+      beep_low:  () => playTone('sine',     440, 0.4, 0.6),
+      beep_high: () => playTone('sine',     880, 0.3, 0.6),
+      tick:      () => playTone('square',   600, 0.08, 0.4),
+      horn: () => {
+        playTone('sawtooth', 220, 0.5, 0.5);
+        setTimeout(() => playTone('sawtooth', 180, 0.4, 0.4), 200);
+      },
+      chime: () => {
+        [523, 659, 784].forEach((f, i) =>
+          setTimeout(() => playTone('sine', f, 0.5, 0.5), i * 150));
+      },
+      fanfare: () => {
+        [[523,0],[659,150],[784,300],[1047,500]].forEach(([f,t]) =>
+          setTimeout(() => playTone('sine', f, 0.4, 0.6), t));
+      },
+    };
+
+    function playSound(key) {
+      if (!key || key === 'none') return;
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      if (SOUNDS[key]) SOUNDS[key]();
+    }
+
+    function getSoundConfig() {
+      return {
+        s1min:   document.getElementById('sel-1min').value,
+        s10sec:  document.getElementById('sel-10sec').value,
+        schange: document.getElementById('sel-change').value,
+      };
+    }
+
+    function previewSound(slot) {
+      const map = { '1min': 'sel-1min', '10sec': 'sel-10sec', 'change': 'sel-change' };
+      playSound(document.getElementById(map[slot]).value);
+    }
+
+    // Volume
+    document.getElementById('volume-slider').addEventListener('input', function() {
+      masterVolume = this.value / 100;
+      document.getElementById('volume-val').textContent = this.value;
+    });
+
+    // Modal sons
+    document.getElementById('btnSound').addEventListener('click', function() {
+      if (audioCtx.state === 'suspended') audioCtx.resume();
+      document.getElementById('modalSound').classList.add('open');
+    });
+    document.getElementById('btnCloseSound').addEventListener('click', function() {
+      salvarConfigSom();
+      document.getElementById('modalSound').classList.remove('open');
+    });
+    document.getElementById('modalSound').addEventListener('click', function(e) {
+      if (e.target === this) this.classList.remove('open');
+    });
+    // ---- fim Sistema de Áudio ----
+
+    // ---- Editor de Blinds ----
+    function renderBlindsEditor() {
+      const tbody = document.getElementById('blinds-editor-body');
+      tbody.innerHTML = '';
+      BLINDS_STRUCTURE.forEach(function(lv, i) {
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td class="lv">${lv.level}</td>
+          <td><input type="number" class="ed-sb" data-i="${i}" value="${lv.sb}" min="0"></td>
+          <td><input type="number" class="ed-bb" data-i="${i}" value="${lv.bb}" min="0"></td>
+          <td><input type="number" class="ed-dur" data-i="${i}" value="${lv.duration/60}" min="1" max="60"></td>
+          <td><input type="number" class="ed-brk" data-i="${i}" value="${lv.breakAfter/60}" min="0" max="60"></td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    document.getElementById('btnEditBlinds').addEventListener('click', function() {
+      renderBlindsEditor();
+      document.getElementById('modalBlinds').classList.add('open');
+    });
+
+    document.getElementById('btnCloseBlinds').addEventListener('click', function() {
+      document.getElementById('modalBlinds').classList.remove('open');
+    });
+
+    document.getElementById('modalBlinds').addEventListener('click', function(e) {
+      if (e.target === this) this.classList.remove('open');
+    });
+
+    document.getElementById('btnAddLevel').addEventListener('click', function() {
+      const last = BLINDS_STRUCTURE[BLINDS_STRUCTURE.length - 1];
+      BLINDS_STRUCTURE.push({
+        level: last.level + 1,
+        sb: last.sb * 2,
+        bb: last.bb * 2,
+        ante: 0,
+        duration: 1200,
+        breakAfter: 0
+      });
+      renderBlindsEditor();
+    });
+
+    document.getElementById('btnSaveBlinds').addEventListener('click', function() {
+      document.querySelectorAll('#blinds-editor-body tr').forEach(function(tr, i) {
+        BLINDS_STRUCTURE[i].sb         = parseInt(tr.querySelector('.ed-sb').value)  || 0;
+        BLINDS_STRUCTURE[i].bb         = parseInt(tr.querySelector('.ed-bb').value)  || 0;
+        BLINDS_STRUCTURE[i].duration   = (parseInt(tr.querySelector('.ed-dur').value) || 20) * 60;
+        BLINDS_STRUCTURE[i].breakAfter = (parseInt(tr.querySelector('.ed-brk').value) || 0)  * 60;
+      });
+      // Se o nível atual foi editado, reseta o timer para a nova duração
+      timeLeft = BLINDS_STRUCTURE[currentLevel].duration;
+      document.getElementById('modalBlinds').classList.remove('open');
+      updateDisplay();
+    });
+    // ---- fim Editor de Blinds ----
+
+    function updateBattery(current, total) {
+      const pct = total > 0 ? current / total : 0;
+      const hue = Math.round(pct * 120); // 120=verde, 60=amarelo, 0=vermelho
+      const bar = document.getElementById('battery-bar');
+      bar.style.height = (pct * 100) + '%';
+      bar.style.backgroundColor = `hsl(${hue}, 90%, 45%)`;
+    }
+
+    function updateDisplay() {
+      const level = BLINDS_STRUCTURE[currentLevel];
+      const timerEl = document.getElementById('timer');
+
+      if (onBreak) {
+        document.getElementById('level-num').textContent = level.level;
+        document.getElementById('blinds').textContent = 'BREAK';
+        document.getElementById('ante').textContent = 'Intervalo';
+        const mins = Math.floor(breakTimeLeft / 60);
+        const secs = breakTimeLeft % 60;
+        timerEl.textContent = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+        timerEl.className = 'timer warning';
+        document.getElementById('next-blinds').textContent =
+          currentLevel + 1 < BLINDS_STRUCTURE.length
+            ? `${BLINDS_STRUCTURE[currentLevel+1].sb.toLocaleString('pt-BR')} / ${BLINDS_STRUCTURE[currentLevel+1].bb.toLocaleString('pt-BR')}`
+            : 'Final Level';
+        updateBattery(breakTimeLeft, 600);
+        document.getElementById('break-countdown').style.display = 'none';
+        return;
+      }
+
+      document.getElementById('level-num').textContent = level.level;
+      document.getElementById('blinds').textContent = `${level.sb.toLocaleString('pt-BR')} / ${level.bb.toLocaleString('pt-BR')}`;
+      document.getElementById('ante').textContent = level.ante > 0 ? `Ante ${level.ante.toLocaleString('pt-BR')}` : 'No Ante';
+
+      const mins = Math.floor(timeLeft / 60);
+      const secs = timeLeft % 60;
+      timerEl.textContent = `${String(mins).padStart(2,'0')}:${String(secs).padStart(2,'0')}`;
+
+      timerEl.className = 'timer';
+      if (timeLeft <= 60) timerEl.classList.add('danger');
+      else if (timeLeft <= 120) timerEl.classList.add('warning');
+
+      if (currentLevel < BLINDS_STRUCTURE.length - 1) {
+        const next = BLINDS_STRUCTURE[currentLevel + 1];
+        document.getElementById('next-blinds').textContent = `${next.sb.toLocaleString('pt-BR')} / ${next.bb.toLocaleString('pt-BR')}`;
+      } else {
+        document.getElementById('next-blinds').textContent = 'Final Level';
+      }
+
+      updateBattery(timeLeft, level.duration);
+
+      // Tempo faltando para o próximo break
+      const breakEl = document.getElementById('break-countdown');
+      const breakTimeEl = document.getElementById('break-time-left');
+
+      // Calcula tempo total restante até o próximo breakAfter > 0
+      let secsToBreak = timeLeft; // tempo restante do nível atual
+      let foundBreak = false;
+      for (let i = currentLevel; i < BLINDS_STRUCTURE.length; i++) {
+        if (i > currentLevel) secsToBreak += BLINDS_STRUCTURE[i].duration;
+        if (BLINDS_STRUCTURE[i].breakAfter > 0) {
+          foundBreak = true;
+          break;
+        }
+      }
+
+      if (foundBreak) {
+        const bHours = Math.floor(secsToBreak / 3600);
+        const bMins  = Math.floor((secsToBreak % 3600) / 60);
+        breakTimeEl.textContent = `${String(bHours).padStart(2,'0')}:${String(bMins).padStart(2,'0')}`;
+        breakEl.style.display = 'block';
+      } else {
+        breakEl.style.display = 'none';
+      }
+    }
+
+    function tick() {
+      if (onBreak) {
+        if (breakTimeLeft > 0) {
+          breakTimeLeft--;
+          updateDisplay();
+        } else {
+          onBreak = false;
+          const btnBreak = document.getElementById('btnBreak');
+          btnBreak.innerHTML = '<i class="fas fa-coffee"></i> Break';
+          btnBreak.style.background = '#6c3483';
+          updateDisplay();
+        }
+        return;
+      }
+
+      if (timeLeft > 0) {
+        timeLeft--;
+        const cfg = getSoundConfig();
+        // Bip nos últimos 10 segundos
+        if (timeLeft <= 10 && timeLeft > 0) playSound(cfg.s10sec);
+        // Alerta 1 minuto restante (dispara exatamente em 60)
+        if (timeLeft === 60) playSound(cfg.s1min);
+        updateDisplay();
+      } else {
+        const level = BLINDS_STRUCTURE[currentLevel];
+        // Som de mudança de blind
+        playSound(getSoundConfig().schange);
+        if (level.breakAfter > 0) {
+          onBreak = true;
+          breakTimeLeft = level.breakAfter;
+          updateDisplay();
+        }
+        if (currentLevel < BLINDS_STRUCTURE.length - 1) {
+          currentLevel++;
+          timeLeft = BLINDS_STRUCTURE[currentLevel].duration;
+          if (!onBreak) updateDisplay();
+        } else {
+          pause();
+        }
+      }
+    }
+
+    function play() {
+      if (!isRunning) {
+        isRunning = true;
+        timerInterval = setInterval(tick, 1000);
+        document.getElementById('btnPlay').style.display = 'none';
+        document.getElementById('btnPause').style.display = 'block';
+      }
+    }
+
+    function pause() {
+      if (isRunning) {
+        isRunning = false;
+        clearInterval(timerInterval);
+        document.getElementById('btnPlay').style.display = 'block';
+        document.getElementById('btnPause').style.display = 'none';
+      }
+    }
+
+    function reset() {
+      pause();
+      currentLevel = 0;
+      timeLeft = BLINDS_STRUCTURE[0].duration;
+      onBreak = false;
+      breakTimeLeft = 0;
+      updateDisplay();
+    }
+
+    document.getElementById('btnPlay').addEventListener('click', play);
+    document.getElementById('btnPause').addEventListener('click', pause);
+    document.getElementById('btnReset').addEventListener('click', reset);
+
+    document.getElementById('btnPrev').addEventListener('click', function() {
+      pause();
+      onBreak = false;
+      breakTimeLeft = 0;
+      if (currentLevel > 0) currentLevel--;
+      timeLeft = BLINDS_STRUCTURE[currentLevel].duration;
+      updateDisplay();
+    });
+
+    document.getElementById('btnNext').addEventListener('click', function() {
+      pause();
+      onBreak = false;
+      breakTimeLeft = 0;
+      if (currentLevel < BLINDS_STRUCTURE.length - 1) currentLevel++;
+      timeLeft = BLINDS_STRUCTURE[currentLevel].duration;
+      updateDisplay();
+    });
+
+    document.getElementById('btnBreak').addEventListener('click', function() {
+      if (onBreak) {
+        // sai do break manualmente
+        onBreak = false;
+        breakTimeLeft = 0;
+        this.innerHTML = '<i class="fas fa-coffee"></i> Break';
+        this.style.background = '#6c3483';
+        updateDisplay();
+      } else {
+        // entra em break manual de 10 min
+        pause();
+        onBreak = true;
+        breakTimeLeft = 600;
+        this.innerHTML = '<i class="fas fa-times"></i> Sair Break';
+        this.style.background = '#c0392b';
+        updateDisplay();
+        play();
+      }
+    });
+
+    updateDisplay();
+    carregarConfigSom();
+  </script>
+</body>
+</html>

@@ -1,13 +1,33 @@
 from django.db import models
+from django.contrib.auth.models import User
+
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    can_view_players   = models.BooleanField(default=True)
+    can_edit_players   = models.BooleanField(default=False)
+    can_view_torneios  = models.BooleanField(default=True)
+    can_edit_torneios  = models.BooleanField(default=False)
+    can_view_etapas    = models.BooleanField(default=True)
+    can_edit_etapas    = models.BooleanField(default=False)
+    can_view_ranking   = models.BooleanField(default=True)
+    can_manage_users   = models.BooleanField(default=False)
+
+    def __str__(self):
+        return f'Perfil de {self.user.username}'
+
+    class Meta:
+        verbose_name = 'Perfil de Usuário'
+        verbose_name_plural = 'Perfis de Usuários'
 
 
 # Create your models here.
 class Players(models.Model):
     player = models.CharField(max_length=40)
-    email = models.EmailField(max_length=40)
-    redesocial = models.CharField(max_length=30)
+    email = models.EmailField(max_length=40, blank=True, default='')
+    redesocial = models.CharField(max_length=30, blank=True, default='')
     telefone = models.CharField(max_length=14)
-    participacoes = models.IntegerField()
+    participacoes = models.IntegerField(default=0)
 
     def __str__(self):
         return self.player
@@ -24,9 +44,55 @@ class Torneios(models.Model):
     vlr_buyinn = models.DecimalField(max_digits=7, decimal_places=2)
     vlr_rebuy = models.DecimalField(max_digits=7, decimal_places=2)
     vlr_jackpot = models.DecimalField(max_digits=7, decimal_places=2)
+    vlr_txadm = models.DecimalField(max_digits=7, decimal_places=2, default=0.0)
+    estrutura_blinds = models.ForeignKey('EstruturaBlinds', on_delete=models.SET_NULL, null=True, blank=True)
 
     def __str__(self):
         return self.torneio
+
+
+class ConfiguracaoSom(models.Model):
+    user             = models.OneToOneField(User, on_delete=models.CASCADE, related_name='config_som')
+    som_1min         = models.CharField(max_length=20, default='beep_low')
+    som_10sec        = models.CharField(max_length=20, default='tick')
+    som_mudanca      = models.CharField(max_length=20, default='fanfare')
+    volume           = models.IntegerField(default=70)
+
+    def __str__(self):
+        return f'Som de {self.user.username}'
+
+    class Meta:
+        verbose_name = 'Configuração de Som'
+
+
+class EstruturaBlinds(models.Model):
+    nome = models.CharField(max_length=50)
+    descricao = models.TextField(blank=True, default='')
+
+    def __str__(self):
+        return self.nome
+
+    class Meta:
+        verbose_name = 'Estrutura de Blinds'
+        verbose_name_plural = 'Estruturas de Blinds'
+
+
+class NivelBlind(models.Model):
+    estrutura = models.ForeignKey('EstruturaBlinds', on_delete=models.CASCADE, related_name='niveis')
+    nivel = models.IntegerField()
+    small_blind = models.IntegerField()
+    big_blind = models.IntegerField()
+    ante = models.IntegerField(default=0)
+    duracao_minutos = models.IntegerField(default=20)
+    break_apos_minutos = models.IntegerField(default=0)
+
+    def __str__(self):
+        return f'Level {self.nivel}: {self.small_blind}/{self.big_blind}'
+
+    class Meta:
+        ordering = ['nivel']
+        verbose_name = 'Nível de Blind'
+        verbose_name_plural = 'Níveis de Blinds'
 
 
 class Etapas(models.Model):

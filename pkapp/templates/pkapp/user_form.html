@@ -1,0 +1,103 @@
+{% extends 'pkapp/_base_dark.html' %}
+{% block title %}{{ action }} Usuário{% endblock %}
+{% block nav_usuarios %}active{% endblock %}
+
+{% block content %}
+<div class="page-title">
+  <i class="fas fa-user-cog"></i> {{ action }} Usuário
+</div>
+
+<div class="row">
+  <div class="col-md-5">
+    <div class="card-dark mb-4">
+      <div class="section-title">Dados do Usuário</div>
+      <form method="post">
+        {% csrf_token %}
+
+        {% if edit_user %}
+          <!-- Edição: campos básicos manuais -->
+          <div class="form-group">
+            <label>Usuário</label>
+            <input type="text" class="form-control" value="{{ edit_user.username }}" disabled>
+          </div>
+          <div class="form-group">
+            <label>Nome</label>
+            <input type="text" name="first_name" class="form-control" value="{{ edit_user.first_name }}">
+          </div>
+          <div class="form-group">
+            <label>Sobrenome</label>
+            <input type="text" name="last_name" class="form-control" value="{{ edit_user.last_name }}">
+          </div>
+          <div class="form-group">
+            <label>E-mail</label>
+            <input type="email" name="email" class="form-control" value="{{ edit_user.email }}">
+          </div>
+          <div class="form-group">
+            <div class="custom-control custom-switch">
+              <input type="checkbox" class="custom-control-input" id="is_active" name="is_active"
+                {% if edit_user.is_active %}checked{% endif %}>
+              <label class="custom-control-label" for="is_active" style="color:#e0e0e0">Usuário Ativo</label>
+            </div>
+          </div>
+        {% else %}
+          <!-- Criação: usa UserCreationForm -->
+          {% for field in user_form %}
+          <div class="form-group">
+            <label>{{ field.label }}</label>
+            {{ field }}
+            {% if field.errors %}
+              <div class="text-danger" style="font-size:0.8rem">{{ field.errors|join:", " }}</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        {% endif %}
+
+        <div class="section-title mt-4">Permissões de Acesso</div>
+
+        <div class="row">
+          {% for field in profile_form %}
+          <div class="col-6 mb-2">
+            <div class="custom-control custom-switch">
+              {{ field }}
+              <label class="custom-control-label" for="{{ field.id_for_label }}" style="color:#e0e0e0;font-size:0.85rem">
+                {{ field.label }}
+              </label>
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+
+        <div class="mt-4 d-flex justify-content-between">
+          <a href="{% url 'user_list' %}" class="btn btn-secondary">Cancelar</a>
+          <button type="submit" class="btn btn-gold">
+            <i class="fas fa-save"></i> Salvar
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="col-md-4">
+    <div class="card-dark">
+      <div class="section-title"><i class="fas fa-info-circle"></i> Guia de Permissões</div>
+      <table class="table table-borderless" style="font-size:0.82rem">
+        <thead><tr><th>Permissão</th><th>Acesso</th></tr></thead>
+        <tbody>
+          <tr><td>Visualizar Players</td><td>Ver lista de players</td></tr>
+          <tr><td>Editar Players</td><td>Adicionar e editar players</td></tr>
+          <tr><td>Visualizar Torneios</td><td>Ver torneios</td></tr>
+          <tr><td>Editar Torneios</td><td>Criar e editar torneios</td></tr>
+          <tr><td>Visualizar Etapas</td><td>Ver etapas</td></tr>
+          <tr><td>Editar Etapas</td><td>Administrar etapas</td></tr>
+          <tr><td>Visualizar Ranking</td><td>Ver ranking</td></tr>
+          <tr><td>Gerenciar Usuários</td><td>Criar e editar usuários</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<style>
+  .custom-control-input:checked ~ .custom-control-label::before { background-color: #c9a84c; border-color: #c9a84c; }
+</style>
+{% endblock %}

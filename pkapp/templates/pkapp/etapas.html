@@ -1,64 +1,168 @@
-<!DOCTYPE html>
-<html>
-<title>PKTOUR - Etapas</title>
-{% extends 'base.html' %}
-<head>
-	
-</head>
-<body>
-	{% block menu%}
-	<ul class="nav nav-pills">
-	  <li class="nav-item">
-	    <a class="nav-link active" href="{% url 'pkapp_index' %}">Home</a>
-	  </li>
-	  <li class="nav-item dropdown">
-	    <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Opçoes</a>
-	    <div class="dropdown-menu">
-	      <a class="dropdown-item" href="{% url 'pkapp_players' %}">Players</a>
-	      <div class="dropdown-divider"></div>
-	      <a class="dropdown-item" href="{% url 'pkapp_torneios' %}">Torneios</a>
-	      <div class="dropdown-divider"></div>
-	      <a class="dropdown-item" href="{% url 'pkapp_etapas' %}">Etapas</a>
-	      <div class="dropdown-divider"></div>
-	      <a class="dropdown-item" href="{% url 'pkapp_admetapa' %}">Adm. Etapa</a>
-	    </div>
-	  </li>
-	  <li class="nav-item dropdown">
-	    <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Consultas</a>
-	    <div class="dropdown-menu">
-	      <a class="dropdown-item" href="{% url 'pkapp_ranking' %}">Ranking</a>
-	   </li>
-<!--	  <li class="nav-item">
-	    <a class="nav-link" href="#">Link</a>
-	  </li>
-	  <li class="nav-item">
-	    <a class="nav-link disabled" href="#">Disabled</a>
-	  </li>-->
-	</ul>
-{% endblock %}
-{%block main%}
-<div class="row">
-	<div class="col">
-<table class="table table-striped">
-  <thead class="thead-light">
-	    <tr>
-	      <th scope="col" width="30%">Torneio</th>
-	      <th scope="col" width="15%">Etapa</th>
-	      <th scope="col" width="25%">Local</th>
-	      <th scope="col" width="30%">Data</th>
-	    </tr>
-  </thead>
-  <tbody>
-  	{% for etapas in etapas %}
-  	<tr>
-  		<th class="text-success" scope="row">{{etapas.id_torneio.torneio}}</th>
-  		<td class="text-info">{{etapas.etapa}}</td>
- 		<td class="text-info">{{etapas.local}}</td>
- 		<td class="text-danger">{{etapas.data}}</td>
-  	</tr>
-  	{% endfor %}
-  </tbody>
+{% extends 'pkapp/_base_dark.html' %}
+{% block title %}Etapas{% endblock %}
+{% block nav_etapas %}active{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center">
+  <div class="page-title"><i class="fas fa-calendar-alt mr-2"></i>Etapas</div>
+  {% if request.user.is_superuser or request.user.profile.can_edit_etapas %}
+  <button class="btn btn-gold btn-sm" data-toggle="modal" data-target="#modalNovaEtapa">
+    <i class="fas fa-plus mr-1"></i> Nova Etapa
+  </button>
+  {% endif %}
+</div>
+
+<!-- Filtro -->
+<div class="card-dark mb-4" style="padding:16px">
+  <form method="GET" class="form-inline">
+    <label class="mr-2" style="color:#aaa;font-size:0.85rem">Filtrar por torneio:</label>
+    <select name="torneio" class="form-control form-control-sm mr-2" style="min-width:200px">
+      <option value="">Todos os torneios</option>
+      {% for t in torneios %}
+      <option value="{{ t.id }}" {% if torneio_id == t.id|stringformat:"s" %}selected{% endif %}>{{ t.torneio }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-gold btn-sm">Filtrar</button>
+    {% if torneio_id %}
+    <a href="/pkapp/etapas" class="btn btn-sm ml-2" style="background:#0f3460;color:#aaa;border:1px solid #ffffff22">Limpar</a>
+    {% endif %}
+  </form>
+</div>
+
+<div class="card-dark">
+  {% if etapas %}
+  <div class="table-responsive">
+    <table class="table table-borderless mb-0">
+      <thead>
+        <tr>
+          <th>Torneio</th><th>Etapa</th><th>Local</th><th>Data</th><th>Status</th>
+          {% if request.user.is_superuser or request.user.profile.can_edit_etapas %}<th></th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for e in etapas %}
+        <tr>
+          <td><a href="/pkapp/torneios" style="color:#c9a84c;text-decoration:none">{{ e.id_torneio.torneio }}</a></td>
+          <td><strong>{{ e.etapa }}</strong></td>
+          <td style="color:#aaa">{{ e.local }}</td>
+          <td style="color:#aaa">{{ e.data|date:"d-m-Y" }}</td>
+          <td>
+            {% if e.status == 'A' %}<span class="badge-status-A"><i class="fas fa-circle mr-1" style="font-size:0.5rem"></i>Aberta</span>
+            {% elif e.status == 'F' %}<span class="badge-status-F">Finalizada</span>
+            {% else %}<span class="badge-status-I">Inativa</span>{% endif %}
+          </td>
+          {% if request.user.is_superuser or request.user.profile.can_edit_etapas %}
+          <td class="text-right" style="white-space:nowrap">
+            <a class="btn btn-sm btn-gold mr-1" href="/pkapp/admetapa/{{ e.id }}/" title="Administrar">
+              <i class="fas fa-cogs"></i>
+            </a>
+            <button class="btn btn-sm btn-outline-warning mr-1"
+              data-toggle="modal" data-target="#modalEditEtapa"
+              data-id="{{ e.id }}" data-etapa="{{ e.etapa }}" data-local="{{ e.local }}"
+              data-data="{{ e.data|date:'Y-m-d' }}" data-status="{{ e.status }}"
+              data-torneio="{{ e.id_torneio.id }}">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger"
+              data-toggle="modal" data-target="#modalDelEtapa"
+              data-id="{{ e.id }}" data-nome="{{ e.etapa }}">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><div><i class="fas fa-calendar-alt"></i></div><p>Nenhuma etapa encontrada.</p></div>
+  {% endif %}
+</div>
+
+<!-- Modal Nova Etapa -->
+<div class="modal fade" id="modalNovaEtapa" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content" style="background:#16213e;border:1px solid #c9a84c44;color:#e0e0e0">
+      <div class="modal-header" style="border-bottom:1px solid #c9a84c44">
+        <h5 class="modal-title" style="color:#c9a84c"><i class="fas fa-plus mr-2"></i>Nova Etapa</h5>
+        <button type="button" class="close" data-dismiss="modal" style="color:#e0e0e0">&times;</button>
+      </div>
+      <form method="POST" action="{% url 'etapa_create' %}">
+        {% csrf_token %}
+        <input type="hidden" name="torneio_filtro" value="{{ torneio_id }}">
+        <div class="modal-body">
+          {% include 'pkapp/_etapa_fields.html' with torneios=torneios torneio_id=torneio_id %}
+        </div>
+        <div class="modal-footer" style="border-top:1px solid #c9a84c44">
+          <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-gold btn-sm"><i class="fas fa-save mr-1"></i>Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar Etapa -->
+<div class="modal fade" id="modalEditEtapa" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content" style="background:#16213e;border:1px solid #c9a84c44;color:#e0e0e0">
+      <div class="modal-header" style="border-bottom:1px solid #c9a84c44">
+        <h5 class="modal-title" style="color:#c9a84c"><i class="fas fa-edit mr-2"></i>Editar Etapa</h5>
+        <button type="button" class="close" data-dismiss="modal" style="color:#e0e0e0">&times;</button>
+      </div>
+      <form method="POST" id="formEditEtapa" action="">
+        {% csrf_token %}
+        <input type="hidden" name="torneio_filtro" value="{{ torneio_id }}">
+        <div class="modal-body">
+          {% include 'pkapp/_etapa_fields.html' with torneios=torneios torneio_id=torneio_id %}
+        </div>
+        <div class="modal-footer" style="border-top:1px solid #c9a84c44">
+          <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-gold btn-sm"><i class="fas fa-save mr-1"></i>Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Excluir Etapa -->
+<div class="modal fade" id="modalDelEtapa" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content" style="background:#16213e;border:1px solid #c9484855;color:#e0e0e0">
+      <div class="modal-header" style="border-bottom:1px solid #c9484855">
+        <h5 class="modal-title" style="color:#c94848"><i class="fas fa-trash mr-2"></i>Excluir Etapa</h5>
+        <button type="button" class="close" data-dismiss="modal" style="color:#e0e0e0">&times;</button>
+      </div>
+      <form method="POST" id="formDelEtapa" action="">
+        {% csrf_token %}
+        <input type="hidden" name="torneio_filtro" value="{{ torneio_id }}">
+        <div class="modal-body">Confirma a exclusão de <strong id="delEtapaNome"></strong>?</div>
+        <div class="modal-footer" style="border-top:1px solid #c9484855">
+          <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash mr-1"></i>Excluir</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
-</body>
-</html>
+{% block extra_js %}
+<script>
+  $('#modalEditEtapa').on('show.bs.modal', function(e) {
+    const b = $(e.relatedTarget);
+    $(this).find('#formEditEtapa').attr('action', '/pkapp/etapas/' + b.data('id') + '/editar/');
+    $(this).find('[name=etapa]').val(b.data('etapa'));
+    $(this).find('[name=local]').val(b.data('local'));
+    $(this).find('[name=data]').val(b.data('data'));
+    $(this).find('[name=status]').val(b.data('status'));
+    $(this).find('[name=id_torneio]').val(b.data('torneio'));
+  });
+  $('#modalDelEtapa').on('show.bs.modal', function(e) {
+    const b = $(e.relatedTarget);
+    $(this).find('#formDelEtapa').attr('action', '/pkapp/etapas/' + b.data('id') + '/excluir/');
+    $(this).find('#delEtapaNome').text(b.data('nome'));
+  });
+</script>
+{% endblock %}

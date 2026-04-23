@@ -75,15 +75,19 @@ WSGI_APPLICATION = 'pkproject.wsgi.application'
 
 
 # Database
+
+
+
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'pktour',
+        'NAME': 'postgres',
         'USER': 'tournament',
-        'PASSWORD': 'senha@123',
-        'HOST': '127.0.0.1',
+        'PASSWORD': 'Senha@123', 
+        'HOST': 'localhost', 
+#        'HOST': 'db', #para rodar em docker
         'PORT': '5432',
         'CONN_MAX_AGE': 500,
     }
@@ -129,3 +133,7 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/3.0/howto/static-files/
 
 STATIC_URL = '/static/'
+
+LOGIN_URL = '/login/'
+LOGIN_REDIRECT_URL = '/'
+LOGOUT_REDIRECT_URL = '/login/'

@@ -15,8 +15,12 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import include, path
+from pkapp import views as pkviews
 
 urlpatterns = [
     path('admin/', admin.site.urls),
     path('pkapp/', include('pkapp.urls')),
+    path('login/',  pkviews.login_view,  name='login'),
+    path('logout/', pkviews.logout_view, name='logout'),
+    path('', pkviews.dashboard, name='dashboard'),
 ]

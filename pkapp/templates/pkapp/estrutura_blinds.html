@@ -1,0 +1,246 @@
+{% extends 'pkapp/_base_dark.html' %}
+{% block title %}Estruturas de Blinds{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center">
+  <div class="page-title"><i class="fas fa-layer-group mr-2"></i>Estruturas de Blinds</div>
+  <button class="btn btn-gold btn-sm" data-toggle="modal" data-target="#modalNova">
+    <i class="fas fa-plus mr-1"></i> Nova Estrutura
+  </button>
+</div>
+
+{% if estruturas %}
+<div class="row">
+  {% for eb in estruturas %}
+  <div class="col-md-6 mb-4">
+    <div class="card-dark" style="border-left:3px solid #c9a84c">
+      <div class="d-flex justify-content-between align-items-center mb-3">
+        <h5 style="color:#c9a84c;margin:0">{{ eb.nome }}</h5>
+        <span class="chip">{{ eb.niveis.count }} níveis</span>
+      </div>
+      {% if eb.descricao %}<div style="color:#aaa;font-size:0.85rem;margin-bottom:12px">{{ eb.descricao }}</div>{% endif %}
+      <div class="table-responsive">
+        <table class="table table-borderless mb-0" style="font-size:0.82rem">
+          <thead>
+            <tr>
+              <th>Nível</th><th class="text-center">Small</th><th class="text-center">Big</th>
+              <th class="text-center">Duração</th><th class="text-center">Break após</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for n in eb.niveis.all %}
+            <tr>
+              <td style="color:#c9a84c;font-weight:bold">{{ n.nivel }}</td>
+              <td class="text-center">{{ n.small_blind|floatformat:0 }}</td>
+              <td class="text-center">{{ n.big_blind|floatformat:0 }}</td>
+              <td class="text-center">{{ n.duracao_minutos }}min</td>
+              <td class="text-center">{% if n.break_apos_minutos > 0 %}{{ n.break_apos_minutos }}min{% else %}—{% endif %}</td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      <div class="d-flex mt-3" style="gap:8px">
+        <button class="btn btn-sm btn-outline-warning btn-editar"
+          data-id="{{ eb.id }}" data-nome="{{ eb.nome }}" data-descricao="{{ eb.descricao }}">
+          <i class="fas fa-edit"></i> Editar
+        </button>
+        <button class="btn btn-sm btn-outline-danger btn-excluir"
+          data-id="{{ eb.id }}" data-nome="{{ eb.nome }}">
+          <i class="fas fa-trash"></i> Excluir
+        </button>
+        <form method="POST" action="{% url 'estrutura_blinds_list' %}" class="d-inline">
+          {% csrf_token %}
+          <input type="hidden" name="action" value="vincular_todos">
+          <input type="hidden" name="eb_id" value="{{ eb.id }}">
+          <button type="submit" class="btn btn-sm"
+            style="background:#0f3460;color:#c9a84c;border:1px solid #c9a84c44"
+            onclick="return confirm('Vincular esta estrutura a todos os torneios sem estrutura?')">
+            <i class="fas fa-link mr-1"></i> Vincular a todos
+          </button>
+        </form>
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card-dark">
+  <div class="empty-state"><div><i class="fas fa-layer-group"></i></div><p>Nenhuma estrutura cadastrada.</p></div>
+</div>
+{% endif %}
+
+<!-- Modal Nova / Editar -->
+{% for modal_id, modal_title, form_action, eb_edit in modais %}
+<div class="modal fade" id="{{ modal_id }}" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" style="background:#16213e;border:1px solid #c9a84c44;color:#e0e0e0">
+      <div class="modal-header" style="border-bottom:1px solid #c9a84c44">
+        <h5 class="modal-title" style="color:#c9a84c"><i class="fas fa-layer-group mr-2"></i>{{ modal_title }}</h5>
+        <button type="button" class="close" data-dismiss="modal" style="color:#e0e0e0">&times;</button>
+      </div>
+      <form method="POST" action="{{ form_action }}">
+        {% csrf_token %}
+        <div class="modal-body">
+          {% include 'pkapp/_blinds_fields.html' with eb=eb_edit %}
+        </div>
+        <div class="modal-footer" style="border-top:1px solid #c9a84c44">
+          <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-gold btn-sm"><i class="fas fa-save mr-1"></i>Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endfor %}
+
+<!-- Modal Nova -->
+<div class="modal fade" id="modalNova" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" style="background:#16213e;border:1px solid #c9a84c44;color:#e0e0e0">
+      <div class="modal-header" style="border-bottom:1px solid #c9a84c44">
+        <h5 class="modal-title" style="color:#c9a84c"><i class="fas fa-plus mr-2"></i>Nova Estrutura de Blinds</h5>
+        <button type="button" class="close" data-dismiss="modal" style="color:#e0e0e0">&times;</button>
+      </div>
+      <form method="POST" action="{% url 'estrutura_blinds_create' %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          {% include 'pkapp/_blinds_fields.html' %}
+        </div>
+        <div class="modal-footer" style="border-top:1px solid #c9a84c44">
+          <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-gold btn-sm"><i class="fas fa-save mr-1"></i>Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar (dinâmico) -->
+<div class="modal fade" id="modalEditar" tabindex="-1">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content" style="background:#16213e;border:1px solid #c9a84c44;color:#e0e0e0">
+      <div class="modal-header" style="border-bottom:1px solid #c9a84c44">
+        <h5 class="modal-title" style="color:#c9a84c"><i class="fas fa-edit mr-2"></i>Editar Estrutura</h5>
+        <button type="button" class="close" data-dismiss="modal" style="color:#e0e0e0">&times;</button>
+      </div>
+      <form method="POST" id="formEditar" action="">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Nome</label>
+            <input type="text" name="nome" id="edit-nome" class="form-control" required maxlength="50">
+          </div>
+          <div class="form-group">
+            <label>Descrição</label>
+            <input type="text" name="descricao" id="edit-descricao" class="form-control" maxlength="200">
+          </div>
+          <div class="section-title mt-3"><i class="fas fa-table mr-1"></i> Níveis</div>
+          <div class="table-responsive">
+            <table class="table table-borderless mb-0" style="font-size:0.85rem">
+              <thead>
+                <tr>
+                  <th style="color:#c9a84c;width:50px">#</th>
+                  <th class="text-center">Small Blind</th>
+                  <th class="text-center">Big Blind</th>
+                  <th class="text-center">Ante</th>
+                  <th class="text-center">Duração (min)</th>
+                  <th class="text-center">Break após (min)</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody id="edit-niveis-body"></tbody>
+            </table>
+          </div>
+          <button type="button" class="btn btn-sm mt-2" style="background:#0f3460;color:#c9a84c;border:1px solid #c9a84c44" id="edit-add-nivel">
+            <i class="fas fa-plus mr-1"></i> Adicionar Nível
+          </button>
+        </div>
+        <div class="modal-footer" style="border-top:1px solid #c9a84c44">
+          <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-gold btn-sm"><i class="fas fa-save mr-1"></i>Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Excluir -->
+<div class="modal fade" id="modalExcluir" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content" style="background:#16213e;border:1px solid #c9484855;color:#e0e0e0">
+      <div class="modal-header" style="border-bottom:1px solid #c9484855">
+        <h5 class="modal-title" style="color:#c94848"><i class="fas fa-trash mr-2"></i>Excluir Estrutura</h5>
+        <button type="button" class="close" data-dismiss="modal" style="color:#e0e0e0">&times;</button>
+      </div>
+      <form method="POST" id="formExcluir" action="">
+        {% csrf_token %}
+        <div class="modal-body">Confirma a exclusão de <strong id="excluir-nome"></strong>?</div>
+        <div class="modal-footer" style="border-top:1px solid #c9484855">
+          <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash mr-1"></i>Excluir</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+function nivelRow(i, n) {
+  n = n || {};
+  return `<tr>
+    <td style="color:#c9a84c;font-weight:bold">${i}</td>
+    <td><input type="number" name="small_blind" class="form-control form-control-sm" value="${n.small_blind||0}" min="0" required></td>
+    <td><input type="number" name="big_blind"   class="form-control form-control-sm" value="${n.big_blind||0}"   min="0" required></td>
+    <td><input type="number" name="ante"         class="form-control form-control-sm" value="${n.ante||0}"         min="0"></td>
+    <td><input type="number" name="duracao_minutos"      class="form-control form-control-sm" value="${n.duracao_minutos||20}"  min="1"></td>
+    <td><input type="number" name="break_apos_minutos"   class="form-control form-control-sm" value="${n.break_apos_minutos||0}" min="0"></td>
+    <td><button type="button" class="btn btn-sm btn-outline-danger btn-rm-nivel"><i class="fas fa-times"></i></button></td>
+  </tr>`;
+}
+
+// Editar
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.btn-editar');
+  if (!btn) return;
+  const id = btn.dataset.id;
+  document.getElementById('edit-nome').value = btn.dataset.nome;
+  document.getElementById('edit-descricao').value = btn.dataset.descricao || '';
+  document.getElementById('formEditar').action = '/pkapp/blinds/' + id + '/editar/';
+
+  // Busca níveis via API
+  fetch('/pkapp/api/blinds/' + id + '/niveis/')
+    .then(r => r.json())
+    .then(function(niveis) {
+      const tbody = document.getElementById('edit-niveis-body');
+      tbody.innerHTML = '';
+      niveis.forEach(function(n, i) { tbody.innerHTML += nivelRow(i+1, n); });
+    });
+  $('#modalEditar').modal('show');
+});
+
+// Adicionar nível no editar
+document.getElementById('edit-add-nivel').addEventListener('click', function() {
+  const tbody = document.getElementById('edit-niveis-body');
+  tbody.innerHTML += nivelRow(tbody.rows.length + 1);
+});
+
+// Remover nível
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.btn-rm-nivel');
+  if (!btn) return;
+  btn.closest('tr').remove();
+});
+
+// Excluir
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.btn-excluir');
+  if (!btn) return;
+  document.getElementById('excluir-nome').textContent = btn.dataset.nome;
+  document.getElementById('formExcluir').action = '/pkapp/blinds/' + btn.dataset.id + '/excluir/';
+  $('#modalExcluir').modal('show');
+});
+</script>
+{% endblock %}

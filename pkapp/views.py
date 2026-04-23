@@ -1,63 +1,624 @@
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
-from .models import Players, Torneios, Etapas, Ranking
-from .forms import PlayersForm, TorneiosForm, EtapasForm, TorneiosRanking, AdmEtapaForm
+from django.db.models import Sum, Count
+from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth.models import User
+from django.contrib import messages
+
+from .models import Players, Torneios, Etapas, Ranking, UserProfile, EstruturaBlinds, NivelBlind
+from .forms import (
+    PlayersForm, TorneiosForm, EtapasForm, TorneiosRanking,
+    AdmEtapaForm, LoginForm, UserCreateForm, UserProfileForm,
+)
+from .permissions import login_required_custom, permission_required
 
 import pkapp.api.serializers
 
 
-def pkapp_index(request):
-    vlrtemplate = 'Envio de valor teste para template pela View 12345'
-    return render(request, 'pkapp/index.html', {'vlrtemplate': vlrtemplate})
+# ---------------------------------------------------------------------------
+# Auth
+# ---------------------------------------------------------------------------
 
+def login_view(request):
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+    form = LoginForm(request.POST or None)
+    if request.method == 'POST' and form.is_valid():
+        user = authenticate(
+            request,
+            username=form.cleaned_data['username'],
+            password=form.cleaned_data['password'],
+        )
+        if user:
+            login(request, user)
+            return redirect(request.GET.get('next', 'dashboard'))
+        messages.error(request, 'Usuário ou senha inválidos.')
+    return render(request, 'pkapp/login.html', {'form': form})
+
+
+def logout_view(request):
+    logout(request)
+    return redirect('login')
+
+
+# ---------------------------------------------------------------------------
+# Dashboard
+# ---------------------------------------------------------------------------
+
+@login_required_custom
+def dashboard(request):
+    total_players  = Players.objects.count()
+    total_torneios = Torneios.objects.count()
+    total_etapas   = Etapas.objects.count()
+    etapas_abertas = Etapas.objects.filter(status='A').count()
+
+    ultimas_etapas = Etapas.objects.select_related('id_torneio').order_by('-data')[:5]
+
+    top_players = (
+        Ranking.objects
+        .values('id_player__player')
+        .annotate(total_pontos=Sum('pontuacao'), participacoes=Count('id'))
+        .order_by('-total_pontos')[:5]
+    )
+
+    torneios = Torneios.objects.annotate(
+        num_etapas=Count('etapas', distinct=True),
+        num_players=Count('ranking__id_player', distinct=True),
+    )
+
+    jackpots = (
+        Ranking.objects
+        .values('id_torneio__torneio', 'id_torneio_id')
+        .annotate(total_entradas=Sum('buy_inn'), total_rebuys=Sum('qtd_rebuy'))
+    )
+
+    context = {
+        'total_players': total_players,
+        'total_torneios': total_torneios,
+        'total_etapas': total_etapas,
+        'etapas_abertas': etapas_abertas,
+        'ultimas_etapas': ultimas_etapas,
+        'top_players': top_players,
+        'torneios': torneios,
+        'jackpots': jackpots,
+    }
+    return render(request, 'pkapp/dashboard.html', context)
+
+
+# ---------------------------------------------------------------------------
+# Players
+# ---------------------------------------------------------------------------
+
+@permission_required('can_view_players')
+def pkapp_players(request):
+    players = Players.objects.annotate(
+        total_pontos=Sum('ranking__pontuacao'),
+        total_etapas=Count('ranking__id_etapa', distinct=True),
+    ).order_by('player')
+    return render(request, 'pkapp/players.html', {'players': players})
+
+
+@permission_required('can_edit_players')
+def player_create(request):
+    if request.method == 'POST':
+        form = PlayersForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Player adicionado com sucesso.')
+        else:
+            messages.error(request, 'Erro ao salvar player.')
+    return redirect('pkapp_players')
+
+
+@permission_required('can_edit_players')
+def player_update(request, id):
+    player = get_object_or_404(Players, id=id)
+    if request.method == 'POST':
+        form = PlayersForm(request.POST, instance=player)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Player atualizado.')
+        else:
+            erros = '; '.join(
+                f"{campo}: {', '.join(msgs)}" for campo, msgs in form.errors.items()
+            )
+            messages.error(request, f'Erro ao atualizar player: {erros}')
+    return redirect('pkapp_players')
+
+
+@permission_required('can_edit_players')
+def player_delete(request, id):
+    player = get_object_or_404(Players, id=id)
+    if request.method == 'POST':
+        participacoes = Ranking.objects.filter(id_player=player).count()
+        if participacoes > 0:
+            messages.error(request, f'"{player.player}" não pode ser removido: possui {participacoes} participação(ões) registrada(s).')
+        else:
+            player.delete()
+            messages.success(request, f'Player "{player.player}" removido.')
+    return redirect('pkapp_players')
+
+
+# ---------------------------------------------------------------------------
+# Torneios
+# ---------------------------------------------------------------------------
+
+@permission_required('can_view_torneios')
+def pkapp_torneios(request):
+    torneios = Torneios.objects.annotate(
+        num_etapas=Count('etapas', distinct=True),
+        num_players=Count('ranking__id_player', distinct=True),
+    )
+    estruturas_blinds = EstruturaBlinds.objects.all()
+    return render(request, 'pkapp/torneios.html', {
+        'torneios': torneios,
+        'estruturas_blinds': estruturas_blinds,
+    })
+
+
+@permission_required('can_edit_torneios')
+def torneio_create(request):
+    if request.method == 'POST':
+        form = TorneiosForm(request.POST)
+        if form.is_valid():
+            torneio = form.save(commit=False)
+            eb_id = request.POST.get('estrutura_blinds')
+            torneio.estrutura_blinds = EstruturaBlinds.objects.filter(id=eb_id).first() if eb_id else None
+            torneio.save()
+            messages.success(request, 'Torneio criado com sucesso.')
+        else:
+            messages.error(request, 'Erro ao criar torneio.')
+    return redirect('pkapp_torneios')
+
+
+@permission_required('can_edit_torneios')
+def torneio_update(request, id):
+    torneio = get_object_or_404(Torneios, id=id)
+    if request.method == 'POST':
+        form = TorneiosForm(request.POST, instance=torneio)
+        if form.is_valid():
+            t = form.save(commit=False)
+            eb_id = request.POST.get('estrutura_blinds')
+            t.estrutura_blinds = EstruturaBlinds.objects.filter(id=eb_id).first() if eb_id else None
+            t.save()
+            messages.success(request, 'Torneio atualizado.')
+        else:
+            messages.error(request, 'Erro ao atualizar torneio.')
+    return redirect('pkapp_torneios')
+
+
+@permission_required('can_edit_torneios')
+def torneio_delete(request, id):
+    torneio = get_object_or_404(Torneios, id=id)
+    if request.method == 'POST':
+        try:
+            torneio.delete()
+            messages.success(request, f'Torneio "{torneio.torneio}" removido.')
+        except Exception:
+            messages.error(request, 'Não é possível remover: torneio possui registros vinculados.')
+    return redirect('pkapp_torneios')
+
+
+# ---------------------------------------------------------------------------
+# Etapas
+# ---------------------------------------------------------------------------
+
+@permission_required('can_view_etapas')
+def pkapp_etapas(request):
+    torneios   = Torneios.objects.all()
+    torneio_id = request.GET.get('torneio', '').strip()
+    if not torneio_id or not torneio_id.isdigit():
+        torneio_id = None
+    etapas = Etapas.objects.select_related('id_torneio').order_by('-data')
+    if torneio_id:
+        etapas = etapas.filter(id_torneio=torneio_id)
+    return render(request, 'pkapp/etapas.html', {
+        'etapas': etapas, 'torneios': torneios, 'torneio_id': torneio_id,
+    })
+
+
+@permission_required('can_edit_etapas')
+def etapa_create(request):
+    torneio_id = request.POST.get('torneio_filtro') or request.GET.get('torneio')
+    if request.method == 'POST':
+        form = EtapasForm(request.POST)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Etapa criada com sucesso.')
+        else:
+            messages.error(request, 'Erro ao criar etapa.')
+    url = f'/pkapp/etapas?torneio={torneio_id}' if torneio_id else '/pkapp/etapas'
+    return redirect(url)
+
+
+@permission_required('can_edit_etapas')
+def etapa_update(request, id):
+    etapa      = get_object_or_404(Etapas, id=id)
+    torneio_id = request.POST.get('torneio_filtro')
+    if request.method == 'POST':
+        form = EtapasForm(request.POST, instance=etapa)
+        if form.is_valid():
+            form.save()
+            messages.success(request, 'Etapa atualizada.')
+        else:
+            messages.error(request, 'Erro ao atualizar etapa.')
+    url = f'/pkapp/etapas?torneio={torneio_id}' if torneio_id else '/pkapp/etapas'
+    return redirect(url)
+
+
+@permission_required('can_edit_etapas')
+def etapa_delete(request, id):
+    etapa      = get_object_or_404(Etapas, id=id)
+    torneio_id = request.POST.get('torneio_filtro')
+    if request.method == 'POST':
+        try:
+            etapa.delete()
+            messages.success(request, f'Etapa "{etapa.etapa}" removida.')
+        except Exception:
+            messages.error(request, 'Não é possível remover: etapa possui registros vinculados.')
+    url = f'/pkapp/etapas?torneio={torneio_id}' if torneio_id else '/pkapp/etapas'
+    return redirect(url)
+
+
+# ---------------------------------------------------------------------------
+# Ranking
+# ---------------------------------------------------------------------------
+
+MESES = ['Janeiro','Fevereiro','Março','Abril','Maio','Junho',
+         'Julho','Agosto','Setembro','Outubro','Novembro','Dezembro']
+
+
+def _calcular_ranking_com_descarte(torneio):
+    """
+    Regra de negócio extraída do poker-0.0.1-SNAPSHOT.jar:
+    - Pontuação por mês (etapa) para cada jogador.
+    - Preenche com 0 os meses sem participação.
+    - Descarta as 3 menores pontuações.
+    - Total = soma das demais.
+    Retorna também acumulado, jackpot e taxa de administração do torneio.
+    """
+    from collections import defaultdict
+
+    registros = (
+        Ranking.objects
+        .filter(id_torneio=torneio)
+        .select_related('id_player', 'id_etapa')
+        .order_by('id_player', 'id_etapa__data')
+    )
+
+    # pontos_por_mes[player_id][mes(1-12)] = pontuacao
+    pontos_por_mes  = defaultdict(lambda: defaultdict(int))
+    premio_por_player = defaultdict(float)
+    nomes = {}
+
+    total_buy_inn = 0
+    total_rebuy   = 0
+
+    for r in registros:
+        mes = r.id_etapa.data.month
+        pontos_por_mes[r.id_player.id][mes] += r.pontuacao
+        premio_por_player[r.id_player.id]   += float(r.premio)
+        nomes[r.id_player.id] = r.id_player.player
+        total_buy_inn += r.buy_inn
+        total_rebuy   += r.qtd_rebuy
+
+    # Financeiro (mesma fórmula do JAR)
+    vlr_buyinn = float(torneio.vlr_buyinn)
+    vlr_rebuy  = float(torneio.vlr_rebuy)
+    vlr_jackpot = float(torneio.vlr_jackpot)
+    vlr_txadm  = float(torneio.vlr_txadm)
+
+    acumulado = (total_buy_inn + total_rebuy) * vlr_buyinn + total_buy_inn * vlr_txadm
+    jackpot   = (total_buy_inn + total_rebuy) * vlr_jackpot
+    taxa_adm  = total_buy_inn * vlr_txadm
+
+    ranking = []
+    for player_id, meses_dict in pontos_por_mes.items():
+        # Lista de 12 pontuações (índice 0 = janeiro)
+        pontos_12 = [meses_dict.get(m, 0) for m in range(1, 13)]
+
+        # Descarte: remove as 3 menores
+        pontos_ordenados = sorted(pontos_12)
+        total = sum(pontos_ordenados[3:])
+
+        # Marca quais meses foram descartados
+        # Usa cópia para consumir os descartados um a um (lida com valores repetidos)
+        descartados_restantes = pontos_ordenados[:3][:]
+        pontos_meses_marcados = []
+        for p in pontos_12:
+            if p in descartados_restantes:
+                pontos_meses_marcados.append((p, True))
+                descartados_restantes.remove(p)
+            else:
+                pontos_meses_marcados.append((p, False))
+
+        ranking.append({
+            'player':       nomes[player_id],
+            'pontos_meses': pontos_meses_marcados,  # lista de (valor, descartado)
+            'total_pontos': total,
+            'total_premio': premio_por_player[player_id],
+        })
+
+    ranking.sort(key=lambda x: x['total_pontos'], reverse=True)
+
+    return ranking, {
+        'acumulado': acumulado,
+        'jackpot':   jackpot,
+        'taxa_adm':  taxa_adm,
+    }
+
+
+@permission_required('can_view_ranking')
+def pkapp_ranking(request):
+    torneios    = Torneios.objects.all()
+    torneio_id  = request.GET.get('torneio')
+    ranking     = []
+    torneio_sel = None
+    financeiro  = {}
+    if torneio_id:
+        try:
+            torneio_sel = Torneios.objects.get(pk=torneio_id)
+            ranking, financeiro = _calcular_ranking_com_descarte(torneio_sel)
+        except Torneios.DoesNotExist:
+            pass
+    return render(request, 'pkapp/ranking.html', {
+        'torneios':   torneios,
+        'ranking':    ranking,
+        'torneio_sel': torneio_sel,
+        'financeiro': financeiro,
+        'meses':      MESES,
+    })
+
+
+@login_required_custom
+def pontuacao_global(request):
+    return redirect('pkapp_ranking')
+
+
+# ---------------------------------------------------------------------------
+# Gestão de Usuários
+# ---------------------------------------------------------------------------
+
+@permission_required('can_manage_users')
+def user_list(request):
+    users = User.objects.select_related('profile').order_by('username')
+    return render(request, 'pkapp/user_list.html', {'users': users})
+
+
+@permission_required('can_manage_users')
+def user_create(request):
+    user_form    = UserCreateForm(request.POST or None)
+    profile_form = UserProfileForm(request.POST or None)
+    if request.method == 'POST' and user_form.is_valid() and profile_form.is_valid():
+        user = user_form.save()
+        profile = user.profile  # criado pelo signal
+        profile_form = UserProfileForm(request.POST, instance=profile)
+        profile_form.save()
+        messages.success(request, f'Usuário {user.username} criado com sucesso.')
+        return redirect('user_list')
+    return render(request, 'pkapp/user_form.html', {
+        'user_form': user_form,
+        'profile_form': profile_form,
+        'action': 'Criar',
+    })
+
+
+@permission_required('can_manage_users')
+def user_edit(request, id):
+    user    = get_object_or_404(User, id=id)
+    profile, _ = UserProfile.objects.get_or_create(user=user)
+    profile_form = UserProfileForm(request.POST or None, instance=profile)
+    # Formulário simples para dados básicos do usuário
+    if request.method == 'POST':
+        # atualiza nome/email manualmente
+        user.first_name = request.POST.get('first_name', user.first_name)
+        user.last_name  = request.POST.get('last_name', user.last_name)
+        user.email      = request.POST.get('email', user.email)
+        is_active       = request.POST.get('is_active')
+        user.is_active  = bool(is_active)
+        user.save()
+        if profile_form.is_valid():
+            profile_form.save()
+            messages.success(request, f'Usuário {user.username} atualizado.')
+            return redirect('user_list')
+    return render(request, 'pkapp/user_form.html', {
+        'edit_user': user,
+        'profile_form': profile_form,
+        'action': 'Editar',
+    })
+
+
+@permission_required('can_manage_users')
+def user_toggle_active(request, id):
+    user = get_object_or_404(User, id=id)
+    if user == request.user:
+        messages.error(request, 'Você não pode desativar sua própria conta.')
+    else:
+        user.is_active = not user.is_active
+        user.save()
+        status = 'ativado' if user.is_active else 'desativado'
+        messages.success(request, f'Usuário {user.username} {status}.')
+    return redirect('user_list')
+
+
+# ---------------------------------------------------------------------------
+# Estrutura de Blinds
+# ---------------------------------------------------------------------------
+
+@permission_required('can_edit_torneios')
+def estrutura_blinds_list(request):
+    # Ação de vínculo em massa via POST
+    if request.method == 'POST' and request.POST.get('action') == 'vincular_todos':
+        eb_id = request.POST.get('eb_id')
+        if eb_id:
+            eb = EstruturaBlinds.objects.filter(id=eb_id).first()
+            if eb:
+                count = Torneios.objects.filter(estrutura_blinds__isnull=True).update(estrutura_blinds=eb)
+                # Se quiser vincular TODOS (inclusive os que já têm):
+                # count = Torneios.objects.update(estrutura_blinds=eb)
+                messages.success(request, f'Estrutura "{eb.nome}" vinculada a {count} torneio(s).')
+            else:
+                messages.error(request, 'Estrutura não encontrada.')
+        return redirect('estrutura_blinds_list')
+
+    estruturas = EstruturaBlinds.objects.prefetch_related('niveis').all()
+    return render(request, 'pkapp/estrutura_blinds.html', {'estruturas': estruturas})
+
+@permission_required('can_edit_torneios')
+def estrutura_blinds_create(request):
+    if request.method == 'POST':
+        nome      = request.POST.get('nome', '').strip()
+        descricao = request.POST.get('descricao', '').strip()
+        if not nome:
+            messages.error(request, 'Informe um nome para a estrutura.')
+            return redirect('estrutura_blinds_list')
+        eb = EstruturaBlinds.objects.create(nome=nome, descricao=descricao)
+        _salvar_niveis(request, eb)
+        messages.success(request, f'Estrutura "{eb.nome}" criada.')
+    return redirect('estrutura_blinds_list')
+
+
+@permission_required('can_edit_torneios')
+def estrutura_blinds_update(request, id):
+    eb = get_object_or_404(EstruturaBlinds, id=id)
+    if request.method == 'POST':
+        eb.nome      = request.POST.get('nome', eb.nome).strip()
+        eb.descricao = request.POST.get('descricao', '').strip()
+        eb.save()
+        eb.niveis.all().delete()
+        _salvar_niveis(request, eb)
+        messages.success(request, f'Estrutura "{eb.nome}" atualizada.')
+    return redirect('estrutura_blinds_list')
+
+
+@permission_required('can_edit_torneios')
+def estrutura_blinds_delete(request, id):
+    eb = get_object_or_404(EstruturaBlinds, id=id)
+    if request.method == 'POST':
+        try:
+            eb.delete()
+            messages.success(request, f'Estrutura "{eb.nome}" removida.')
+        except Exception:
+            messages.error(request, 'Não é possível remover: estrutura está vinculada a um torneio.')
+    return redirect('estrutura_blinds_list')
+
+
+def _salvar_niveis(request, eb):
+    """Lê os arrays de campos do POST e cria os NivelBlind."""
+    sbs   = request.POST.getlist('small_blind')
+    bbs   = request.POST.getlist('big_blind')
+    antes = request.POST.getlist('ante')
+    durs  = request.POST.getlist('duracao_minutos')
+    brks  = request.POST.getlist('break_apos_minutos')
+    for i, (sb, bb, ante, dur, brk) in enumerate(zip(sbs, bbs, antes, durs, brks), start=1):
+        NivelBlind.objects.create(
+            estrutura=eb, nivel=i,
+            small_blind=int(sb or 0), big_blind=int(bb or 0),
+            ante=int(ante or 0),
+            duracao_minutos=int(dur or 20),
+            break_apos_minutos=int(brk or 0),
+        )
+
+
+# ---------------------------------------------------------------------------
+# Administração de Etapa
+# ---------------------------------------------------------------------------
+
+PONTUACAO_POR_POSICAO = {1: 95, 2: 80, 3: 70, 4: 60, 5: 50, 6: 40, 7: 30, 8: 20, 9: 10}
+
+
+@permission_required('can_edit_etapas')
+def adm_etapa(request, id):
+    etapa   = get_object_or_404(Etapas.objects.select_related('id_torneio'), id=id)
+    torneio = etapa.id_torneio
+
+    inscritos = (
+        Ranking.objects
+        .filter(id_etapa=etapa)
+        .select_related('id_player')
+        .order_by('id_player__player')
+    )
+    inscritos_ids = inscritos.values_list('id_player_id', flat=True)
+
+    players_disponiveis = Players.objects.exclude(id__in=inscritos_ids).order_by('player')
+
+    context = {
+        'etapa':               etapa,
+        'torneio':             torneio,
+        'inscritos':           inscritos,
+        'players_disponiveis': players_disponiveis,
+        'max_players':         torneio.qtd_players,
+        'max_rebuy':           torneio.qtd_rebuy,
+        'total_inscritos':     inscritos.count(),
+        'pontuacao_tabela':    PONTUACAO_POR_POSICAO,
+    }
+    return render(request, 'pkapp/adm_etapa.html', context)
+
+
+@permission_required('can_view_etapas')
+def poker_clock(request, id):
+    etapa   = get_object_or_404(Etapas.objects.select_related('id_torneio'), id=id)
+    torneio = etapa.id_torneio
+
+    inscritos = (
+        Ranking.objects
+        .filter(id_etapa=etapa)
+        .select_related('id_player')
+        .order_by('id_player__player')
+    )
+
+    ativos     = inscritos.filter(posicao=0)
+    eliminados = inscritos.exclude(posicao=0).order_by('posicao')
+
+    total_buyins = inscritos.count()
+    total_rebuys = inscritos.aggregate(Sum('qtd_rebuy'))['qtd_rebuy__sum'] or 0
+
+    vlr_buyinn  = float(torneio.vlr_buyinn)
+    vlr_rebuy   = float(torneio.vlr_rebuy)
+    vlr_txadm   = float(torneio.vlr_txadm)
+    vlr_jackpot = float(torneio.vlr_jackpot)
+
+    total_valor_buyins = total_buyins * vlr_buyinn
+    total_valor_rebuys = total_rebuys * vlr_rebuy
+    txadm     = total_buyins * vlr_txadm
+    jackpot   = (total_buyins + total_rebuys) * vlr_jackpot
+    arrecadado = total_valor_buyins + total_valor_rebuys + txadm
+    prizepool  = arrecadado - txadm - jackpot
+
+    # Estrutura de blinds vinculada ao torneio
+    niveis_blinds = []
+    if torneio.estrutura_blinds:
+        niveis_blinds = list(
+            torneio.estrutura_blinds.niveis.values(
+                'nivel', 'small_blind', 'big_blind', 'ante',
+                'duracao_minutos', 'break_apos_minutos'
+            )
+        )
+
+    import json as _json
+    context = {
+        'etapa':              etapa,
+        'torneio':            torneio,
+        'ativos':             ativos,
+        'eliminados':         eliminados,
+        'total_ativos':       ativos.count(),
+        'total_inscritos':    total_buyins,
+        'total_rebuys':       total_rebuys,
+        'total_valor_buyins': total_valor_buyins,
+        'total_valor_rebuys': total_valor_rebuys,
+        'jackpot':            jackpot,
+        'prizepool':          prizepool,
+        'payout_1':           prizepool * 0.50,
+        'payout_2':           prizepool * 0.30,
+        'payout_3':           prizepool * 0.20,
+        'niveis_blinds_json': _json.dumps(niveis_blinds),
+    }
+    return render(request, 'pkapp/poker_clock.html', context)
+
+
+# ---------------------------------------------------------------------------
+# React (mantido)
+# ---------------------------------------------------------------------------
 
 def pkapp_react(request):
     return render(request, 'pkapp/react.html')
-
-
-def pkapp_players(request):
-    players = Players.objects.all()
-    form = PlayersForm()
-    data = {'players': players, 'form': form}
-    return render(request, 'pkapp/players.html', data)
-
-
-def player_update(request, id):
-    data = {}
-    player = Players.objects.get(id=id)
-    form = PlayersForm(request.POST or None, instance=player)
-    data['player'] = player
-    data['form'] = form
-    if request.method == 'POST':
-        if form.is_valid():
-            form.save()
-            return redirect('pkapp_players')
-    else:
-        return render(request, 'pkapp/player_update.html', data)
-
-
-def pkapp_etapas(request):
-    etapas = Etapas.objects.all()
-    return render(request, 'pkapp/etapas.html', {'etapas': etapas})
-
-
-def pkapp_admetapa(request, id):
-    data = {}
-    etapa = Etapas.objects.get(id=id)
-    form = AdmEtapaForm(request.POST or None, instance=etapa)
-    data['etapa'] = etapa
-    data['form'] = form
-
-
-def pkapp_torneios(request):
-    torneios = Torneios.objects.all()
-    return render(request, 'pkapp/torneios.html', {'torneios': torneios})
-
-
-def pkapp_ranking(request):
-    teste = 'Conteudo de ranking'
-    return render(request, 'pkapp/ranking.html', {'teste': teste})
-
-def pontuacao_global(request):
-    teste = 'Conteudo de ranking'
-    return render(request, 'pkapp/ranking.html', {'teste': teste})

@@ -1,67 +1,165 @@
-<!DOCTYPE html>
-<html>
-<title>PKTOUR - Torneios</title>
-{% extends 'base.html' %}
-<head>
-	
-</head>
-<body>
-	{% block menu%}
-	<ul class="nav nav-pills">
-	  <li class="nav-item">
-	    <a class="nav-link active" href="{% url 'pkapp_index' %}">Home</a>
-	  </li>
-	  <li class="nav-item dropdown">
-	    <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Opçoes</a>
-	    <div class="dropdown-menu">
-	      <a class="dropdown-item" href="{% url 'pkapp_players' %}">Players</a>
-	      <div class="dropdown-divider"></div>
-	      <a class="dropdown-item" href="{% url 'pkapp_torneios' %}">Torneios</a>
-	      <div class="dropdown-divider"></div>
-	      <a class="dropdown-item" href="{% url 'pkapp_etapas' %}">Etapas</a>
-	      <div class="dropdown-divider"></div>
-	      <a class="dropdown-item" href="{% url 'pkapp_admetapa' %}">Adm. Etapa</a>
-	    </div>
-	  </li>
-	  <li class="nav-item dropdown">
-	    <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Consultas</a>
-	    <div class="dropdown-menu">
-	      <a class="dropdown-item" href="{% url 'pkapp_ranking' %}">Ranking</a>
-	   </li>
-<!--	  <li class="nav-item">
-	    <a class="nav-link" href="#">Link</a>
-	  </li>
-	  <li class="nav-item">
-	    <a class="nav-link disabled" href="#">Disabled</a>
-	  </li>-->
-	</ul>
-{% endblock %}
-{%block main%}
+{% extends 'pkapp/_base_dark.html' %}
+{% block title %}Torneios{% endblock %}
+{% block nav_torneios %}active{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center">
+  <div class="page-title"><i class="fas fa-trophy mr-2"></i>Torneios</div>
+  {% if request.user.is_superuser or request.user.profile.can_edit_torneios %}
+  <button class="btn btn-gold btn-sm" data-toggle="modal" data-target="#modalNovoTorneio">
+    <i class="fas fa-plus mr-1"></i> Novo Torneio
+  </button>
+  {% endif %}
+</div>
+
+{% if torneios %}
 <div class="row">
-	<div class="col">
-<table class="table table-striped">
-  <thead class="thead-light">
-	    <tr>
-	    <!--  <th scope="col" width="10%">ID</th>-->
-	      <th scope="col" width="40%">Torneio</th>
-	      <th scope="col" width="15%">Buy Inn</th>
-	      <th scope="col" width="15%">Rebuy</th>
-	      <th scope="col" width="15%">Jackpot</th>
-	      <th scope="col" width="15%">Etapas</th>
-	    </tr>
-  </thead>
-  <tbody>
-  	{% for torneios in torneios%}
-  	<tr>
-  		<th scope="row" class="text-success">{{torneios.torneio}}</th>
-  		<td class="text-danger">{{torneios.vlr_buyinn}}</td>
-  		<td class="text-danger">{{torneios.vlr_rebuy}}</td>
-  		<td class="text-primary">{{torneios.vlr_jackpot}}</td>
-  		<td class="text-info">{{torneios.qtd_etapas}}</td>
-  	</tr>
-  	{% endfor %}
-  </tbody>
+  {% for t in torneios %}
+  <div class="col-md-6 col-lg-4 mb-4">
+    <div class="card-dark h-100" style="border-left:3px solid #c9a84c">
+      <div class="d-flex justify-content-between align-items-start mb-3">
+        <h5 style="color:#c9a84c;margin:0">{{ t.torneio }}</h5>
+        <span class="chip">{{ t.num_etapas }} / {{ t.qtd_etapas }} etapas</span>
+      </div>
+      <div class="row text-center mb-3">
+        <div class="col-4">
+          <div style="font-size:1.4rem;font-weight:bold;color:#e0e0e0">{{ t.num_players }}</div>
+          <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:1px">Players</div>
+        </div>
+        <div class="col-4">
+          <div style="font-size:1.4rem;font-weight:bold;color:#c9a84c">R$ {{ t.vlr_buyinn }}</div>
+          <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:1px">Buy-in</div>
+        </div>
+        <div class="col-4">
+          <div style="font-size:1.4rem;font-weight:bold;color:#e0e0e0">R$ {{ t.vlr_rebuy }}</div>
+          <div style="font-size:0.7rem;color:#aaa;text-transform:uppercase;letter-spacing:1px">Rebuy</div>
+        </div>
+      </div>
+      <hr style="border-color:#c9a84c22">
+      <div class="d-flex justify-content-between mb-3" style="font-size:0.85rem">
+        <div><span style="color:#aaa">Jackpot:</span> <strong style="color:#c9a84c">R$ {{ t.vlr_jackpot }}</strong></div>
+        <div><span style="color:#aaa">Tx. Adm:</span> <strong>R$ {{ t.vlr_txadm }}</strong></div>
+        <div><span style="color:#aaa">Max Rebuy:</span> <strong>{{ t.qtd_rebuy }}x</strong></div>
+      </div>
+      <div class="d-flex" style="gap:8px">
+        <a href="/pkapp/etapas?torneio={{ t.id }}" class="btn btn-sm btn-gold flex-fill text-center">
+          <i class="fas fa-calendar-alt mr-1"></i>Etapas
+        </a>
+        <a href="/pkapp/ranking?torneio={{ t.id }}" class="btn btn-sm flex-fill text-center" style="background:#0f3460;color:#c9a84c;border:1px solid #c9a84c44">
+          <i class="fas fa-list-ol mr-1"></i>Ranking
+        </a>
+        {% if request.user.is_superuser or request.user.profile.can_edit_torneios %}
+        <button class="btn btn-sm btn-outline-warning"
+          data-toggle="modal" data-target="#modalEditTorneio"
+          data-id="{{ t.id }}" data-torneio="{{ t.torneio }}"
+          data-qtd_etapas="{{ t.qtd_etapas }}" data-qtd_rebuy="{{ t.qtd_rebuy }}"
+          data-qtd_players="{{ t.qtd_players }}" data-vlr_buyinn="{{ t.vlr_buyinn }}"
+          data-vlr_rebuy="{{ t.vlr_rebuy }}" data-vlr_jackpot="{{ t.vlr_jackpot }}"
+          data-vlr_txadm="{{ t.vlr_txadm }}"
+          data-estrutura_blinds="{{ t.estrutura_blinds_id|default:'' }}">
+          <i class="fas fa-edit"></i>
+        </button>
+        <button class="btn btn-sm btn-outline-danger"
+          data-toggle="modal" data-target="#modalDelTorneio"
+          data-id="{{ t.id }}" data-nome="{{ t.torneio }}">
+          <i class="fas fa-trash"></i>
+        </button>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+  {% endfor %}
+</div>
+{% else %}
+<div class="card-dark">
+  <div class="empty-state"><div><i class="fas fa-trophy"></i></div><p>Nenhum torneio cadastrado.</p></div>
+</div>
+{% endif %}
+
+<!-- Modal Novo -->
+<div class="modal fade" id="modalNovoTorneio" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content" style="background:#16213e;border:1px solid #c9a84c44;color:#e0e0e0">
+      <div class="modal-header" style="border-bottom:1px solid #c9a84c44">
+        <h5 class="modal-title" style="color:#c9a84c"><i class="fas fa-plus mr-2"></i>Novo Torneio</h5>
+        <button type="button" class="close" data-dismiss="modal" style="color:#e0e0e0">&times;</button>
+      </div>
+      <form method="POST" action="{% url 'torneio_create' %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          {% include 'pkapp/_torneio_fields.html' with estruturas_blinds=estruturas_blinds %}
+        </div>
+        <div class="modal-footer" style="border-top:1px solid #c9a84c44">
+          <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-gold btn-sm"><i class="fas fa-save mr-1"></i>Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar -->
+<div class="modal fade" id="modalEditTorneio" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content" style="background:#16213e;border:1px solid #c9a84c44;color:#e0e0e0">
+      <div class="modal-header" style="border-bottom:1px solid #c9a84c44">
+        <h5 class="modal-title" style="color:#c9a84c"><i class="fas fa-edit mr-2"></i>Editar Torneio</h5>
+        <button type="button" class="close" data-dismiss="modal" style="color:#e0e0e0">&times;</button>
+      </div>
+      <form method="POST" id="formEditTorneio" action="">
+        {% csrf_token %}
+        <div class="modal-body">
+          {% include 'pkapp/_torneio_fields.html' with estruturas_blinds=estruturas_blinds %}
+        </div>
+        <div class="modal-footer" style="border-top:1px solid #c9a84c44">
+          <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-gold btn-sm"><i class="fas fa-save mr-1"></i>Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Excluir -->
+<div class="modal fade" id="modalDelTorneio" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content" style="background:#16213e;border:1px solid #c9484855;color:#e0e0e0">
+      <div class="modal-header" style="border-bottom:1px solid #c9484855">
+        <h5 class="modal-title" style="color:#c94848"><i class="fas fa-trash mr-2"></i>Excluir Torneio</h5>
+        <button type="button" class="close" data-dismiss="modal" style="color:#e0e0e0">&times;</button>
+      </div>
+      <form method="POST" id="formDelTorneio" action="">
+        {% csrf_token %}
+        <div class="modal-body">Confirma a exclusão de <strong id="delTorneioNome"></strong>?</div>
+        <div class="modal-footer" style="border-top:1px solid #c9484855">
+          <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash mr-1"></i>Excluir</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
-</body>
-</html>
+{% block extra_js %}
+<script>
+  $('#modalEditTorneio').on('show.bs.modal', function(e) {
+    const b = $(e.relatedTarget);
+    $(this).find('#formEditTorneio').attr('action', '/pkapp/torneios/' + b.data('id') + '/editar/');
+    $(this).find('[name=torneio]').val(b.data('torneio'));
+    $(this).find('[name=qtd_etapas]').val(b.data('qtd_etapas'));
+    $(this).find('[name=qtd_rebuy]').val(b.data('qtd_rebuy'));
+    $(this).find('[name=qtd_players]').val(b.data('qtd_players'));
+    $(this).find('[name=vlr_buyinn]').val(String(b.data('vlr_buyinn')).replace(',', '.'));
+    $(this).find('[name=vlr_rebuy]').val(String(b.data('vlr_rebuy')).replace(',', '.'));
+    $(this).find('[name=vlr_jackpot]').val(String(b.data('vlr_jackpot')).replace(',', '.'));
+    $(this).find('[name=vlr_txadm]').val(String(b.data('vlr_txadm')).replace(',', '.'));
+    $(this).find('[name=estrutura_blinds]').val(b.data('estrutura_blinds') || '');
+  });
+  $('#modalDelTorneio').on('show.bs.modal', function(e) {
+    const b = $(e.relatedTarget);
+    $(this).find('#formDelTorneio').attr('action', '/pkapp/torneios/' + b.data('id') + '/excluir/');
+    $(this).find('#delTorneioNome').text(b.data('nome'));
+  });
+</script>
+{% endblock %}

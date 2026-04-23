@@ -1,56 +1,98 @@
-<!DOCTYPE html>
-<html>
-<title>PKTOUR - Ranking</title>
-{% extends 'base.html' %}
-<head>
-	<title></title>
-</head>
-<body>
-{% block menu%}
-  	<ul class="nav nav-pills">
-	  <li class="nav-item">
-	    <a class="nav-link active" href="{% url 'pkapp_index' %}">Home</a>
-	  </li>
-	  <li class="nav-item dropdown">
-	    <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Opçoes</a>
-	    <div class="dropdown-menu">
-	      <a class="dropdown-item" href="{% url 'pkapp_players' %}">Players</a>
-	      <div class="dropdown-divider"></div>
-	      <a class="dropdown-item" href="{% url 'pkapp_torneios' %}">Torneios</a>
-	      <div class="dropdown-divider"></div>
-	      <a class="dropdown-item" href="{% url 'pkapp_etapas' %}">Etapas</a>
-	      <div class="dropdown-divider"></div>
-	      <a class="dropdown-item" href="{% url 'pkapp_admetapa' %}">Adm. Etapa</a>
-	    </div>
-	  </li>
-	  <li class="nav-item dropdown">
-	    <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Consultas</a>
-	    <div class="dropdown-menu">
-	      <a class="dropdown-item" href="{% url 'pkapp_ranking' %}">Ranking</a>
-	   </li>
-<!--	  <li class="nav-item">
-	    <a class="nav-link" href="#">Link</a>
-	  </li>
-	  <li class="nav-item">
-	    <a class="nav-link disabled" href="#">Disabled</a>
-	  </li>-->
-	</ul>
-	{% endblock %}
+{% extends 'pkapp/_base_dark.html' %}
+{% block title %}Ranking{% endblock %}
+{% block nav_ranking %}active{% endblock %}
 
-{{%block main%}
-<!--<div class="row">
-	<div class="col">
-<table class="table">
-  <thead class="thead-light">
-	    <tr>
-	      <th scope="col" width="10%">Player</th>
-	      <th scope="col" width="45%">Torneio</th>
-	      <th scope="col" width="15%">Buy Inn</th>
-	      <th scope="col" width="15%">Rebuy</th>
-	      <th scope="col" width="15%">Etapas</th>
-	    </tr>
-  </thead>-->
-{% endblock %} 
+{% block content %}
+<div class="page-title"><i class="fas fa-list-ol mr-2"></i>Ranking</div>
 
-</body>
-</html>
+<!-- Seletor de torneio -->
+<div class="card-dark mb-4" style="padding:16px">
+  <form method="GET" class="form-inline">
+    <label class="mr-2" style="color:#aaa;font-size:0.85rem">Selecionar torneio:</label>
+    <select name="torneio" class="form-control form-control-sm mr-2" style="min-width:220px">
+      <option value="">— Escolha um torneio —</option>
+      {% for t in torneios %}
+      <option value="{{ t.id }}" {% if torneio_sel and torneio_sel.id == t.id %}selected{% endif %}>{{ t.torneio }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-gold btn-sm">Ver Ranking</button>
+  </form>
+</div>
+
+{% if torneio_sel %}
+<div class="card-dark">
+
+  <!-- Cabeçalho estilo relatório -->
+  <div style="text-align:center;margin-bottom:4px">
+    <div style="font-size:1.4rem;font-weight:bold;color:#e0e0e0">Relatório Anual</div>
+    <div style="font-size:0.9rem;color:#aaa">Edição {{ torneio_sel.torneio }}</div>
+  </div>
+
+  {% if ranking %}
+  <div class="table-responsive mt-3">
+    <table class="table table-borderless mb-0" style="font-size:0.85rem;text-align:center">
+      <thead>
+        <tr style="background:#0f3460">
+          <th style="color:#c9a84c;width:40px">#</th>
+          <th style="text-align:left;color:#c9a84c">Jogador</th>
+          {% for mes in meses %}
+          <th style="color:#c9a84c">{{ mes }}</th>
+          {% endfor %}
+          <th style="color:#c9a84c">Total</th>
+        </tr>
+      </thead>
+      <tbody>
+      {% for r in ranking|slice:":10" %}
+        <tr>
+          <td>
+            {% if forloop.counter == 1 %}<i class="fas fa-trophy" style="color:#FFD700;font-size:1.1rem"></i>
+            {% elif forloop.counter == 2 %}<i class="fas fa-trophy" style="color:#C0C0C0;font-size:1.1rem"></i>
+            {% elif forloop.counter == 3 %}<i class="fas fa-trophy" style="color:#CD7F32;font-size:1.1rem"></i>
+            {% else %}<span style="color:#c9a84c;font-weight:bold">{{ forloop.counter }}</span>
+            {% endif %}
+          </td>
+          <td style="text-align:left;font-weight:bold;white-space:nowrap">{{ r.player }}</td>
+          {% for pts, descartado in r.pontos_meses %}
+          <td style="{% if descartado %}color:#c94848;font-weight:bold{% elif pts == 0 %}color:#555{% else %}color:#e0e0e0{% endif %}">{{ pts }}</td>
+          {% endfor %}
+          <td style="color:#c9a84c;font-weight:bold">{{ r.total_pontos }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="15" style="text-align:center;color:#aaa;font-size:0.8rem;padding-top:12px;border-top:1px solid #c9a84c33">
+            Acumulado: <strong style="color:#e0e0e0">{{ financeiro.acumulado|floatformat:0 }}</strong>
+            &nbsp;&nbsp;—&nbsp;&nbsp;
+            Jackpot: <strong style="color:#e0e0e0">{{ financeiro.jackpot|floatformat:0 }}</strong>
+            &nbsp;&nbsp;—&nbsp;&nbsp;
+            Taxa de administração: <strong style="color:#e0e0e0">{{ financeiro.taxa_adm|floatformat:0 }}</strong>
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state">
+    <div><i class="fas fa-list-ol"></i></div>
+    <p>Nenhum resultado registrado para este torneio.</p>
+  </div>
+  {% endif %}
+</div>
+
+{% elif not torneio_sel and torneios %}
+<div class="card-dark">
+  <div class="empty-state">
+    <div><i class="fas fa-hand-point-up"></i></div>
+    <p>Selecione um torneio acima para ver o ranking.</p>
+  </div>
+</div>
+{% else %}
+<div class="card-dark">
+  <div class="empty-state">
+    <div><i class="fas fa-trophy"></i></div>
+    <p>Nenhum torneio cadastrado ainda.</p>
+  </div>
+</div>
+{% endif %}
+{% endblock %}

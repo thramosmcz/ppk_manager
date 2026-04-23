@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PKTOUR - {% block title %}{% endblock %}</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <style>
+    body { background-color: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; }
+    .navbar { background-color: #16213e; border-bottom: 2px solid #c9a84c; }
+    .navbar-brand { color: #c9a84c !important; font-weight: bold; font-size: 1.4rem; letter-spacing: 2px; }
+    .nav-link { color: #e0e0e0 !important; }
+    .nav-link:hover, .nav-link.active { color: #c9a84c !important; }
+    .page-title { color: #c9a84c; font-size: 1.4rem; font-weight: bold; letter-spacing: 2px; margin: 28px 0 20px; }
+    .card-dark { background-color: #16213e; border: 1px solid #c9a84c33; border-radius: 12px; padding: 24px; }
+    .section-title { color: #c9a84c; font-size: 0.85rem; text-transform: uppercase; letter-spacing: 2px; border-bottom: 1px solid #c9a84c44; padding-bottom: 8px; margin-bottom: 16px; }
+    table { color: #e0e0e0 !important; }
+    thead th { color: #c9a84c; border-bottom: 1px solid #c9a84c44 !important; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; border-top: none !important; }
+    tbody tr { border-bottom: 1px solid #ffffff11; }
+    tbody tr:hover { background-color: #0f3460; }
+    td, th { border-top: none !important; vertical-align: middle !important; }
+    .badge-status-A { background-color: #28a745; color: white; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; }
+    .badge-status-I { background-color: #6c757d; color: white; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; }
+    .badge-status-F { background-color: #c9a84c; color: #1a1a2e; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; }
+    .chip { display: inline-block; background: #c9a84c22; border: 1px solid #c9a84c55; border-radius: 20px; padding: 2px 12px; font-size: 0.8rem; color: #c9a84c; }
+    .btn-gold { background-color: #c9a84c; color: #1a1a2e; border: none; font-weight: bold; }
+    .btn-gold:hover { background-color: #e0c060; color: #1a1a2e; }
+    .form-control, .form-control:focus { background-color: #0f3460; border: 1px solid #c9a84c44; color: #e0e0e0; }
+    .form-control::placeholder { color: #888; }
+    select.form-control option { background-color: #16213e; }
+    .rank-medal-1 { color: #FFD700; }
+    .rank-medal-2 { color: #C0C0C0; }
+    .rank-medal-3 { color: #CD7F32; }
+    .empty-state { text-align: center; padding: 40px; color: #666; }
+    .empty-state i { font-size: 3rem; margin-bottom: 12px; color: #c9a84c44; }
+    .user-badge { background: #c9a84c22; border: 1px solid #c9a84c55; border-radius: 20px; padding: 3px 12px; font-size: 0.82rem; color: #c9a84c; }
+    .alert { border-radius: 8px; }
+  </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg">
+  <a class="navbar-brand" href="/">&#9824; PKTOUR</a>
+  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navMenu">
+    <span style="color:#c9a84c"><i class="fas fa-bars"></i></span>
+  </button>
+  <div class="collapse navbar-collapse" id="navMenu">
+    <ul class="navbar-nav mr-auto">
+      {% with profile=request.user.profile %}
+      {% if request.user.is_superuser or profile.can_view_players %}
+      <li class="nav-item"><a class="nav-link {% block nav_players %}{% endblock %}" href="/pkapp/players">Players</a></li>
+      {% endif %}
+      {% if request.user.is_superuser or profile.can_view_torneios %}
+      <li class="nav-item"><a class="nav-link {% block nav_torneios %}{% endblock %}" href="/pkapp/torneios">Torneios</a></li>
+      {% endif %}
+      {% if request.user.is_superuser or profile.can_view_etapas %}
+      <li class="nav-item"><a class="nav-link {% block nav_etapas %}{% endblock %}" href="/pkapp/etapas">Etapas</a></li>
+      {% endif %}
+      {% if request.user.is_superuser or profile.can_edit_torneios %}
+      <li class="nav-item"><a class="nav-link {% block nav_blinds %}{% endblock %}" href="/pkapp/blinds/"><i class="fas fa-layer-group mr-1"></i>Blinds</a></li>
+      {% endif %}
+      {% if request.user.is_superuser or profile.can_view_ranking %}
+      <li class="nav-item"><a class="nav-link {% block nav_ranking %}{% endblock %}" href="/pkapp/ranking">Ranking</a></li>
+      {% endif %}
+      {% if request.user.is_superuser or profile.can_manage_users %}
+      <li class="nav-item"><a class="nav-link {% block nav_usuarios %}{% endblock %}" href="/pkapp/usuarios/"><i class="fas fa-users-cog"></i> Usuários</a></li>
+      {% endif %}
+      {% endwith %}
+    </ul>
+    <ul class="navbar-nav ml-auto">
+      {% if request.user.is_authenticated %}
+      <li class="nav-item d-flex align-items-center mr-3">
+        <span class="user-badge"><i class="fas fa-user-circle"></i> {{ request.user.get_full_name|default:request.user.username }}
+          {% if request.user.is_superuser %}<span style="color:#c9a84c;font-size:0.7rem"> ADMIN</span>{% endif %}
+        </span>
+      </li>
+      <li class="nav-item">
+        <a class="nav-link" href="/logout/"><i class="fas fa-sign-out-alt"></i> Sair</a>
+      </li>
+      {% else %}
+      <li class="nav-item">
+        <a class="nav-link" href="/login/"><i class="fas fa-sign-in-alt"></i> Entrar</a>
+      </li>
+      {% endif %}
+    </ul>
+  </div>
+</nav>
+
+<div class="container-fluid py-3 px-4">
+  {% if messages %}
+    {% for msg in messages %}
+    <div class="alert alert-{% if msg.tags == 'error' %}danger{% else %}{{ msg.tags }}{% endif %} alert-dismissible fade show" role="alert">
+      {{ msg }}
+      <button type="button" class="close" data-dismiss="alert"><span>&times;</span></button>
+    </div>
+    {% endfor %}
+  {% endif %}
+  {% block content %}{% endblock %}
+</div>
+
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+{% block extra_js %}{% endblock %}
+</body>
+</html>

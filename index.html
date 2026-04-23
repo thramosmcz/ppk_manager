@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <title>Relatório Anual</title>
+    <style>
+        /* Estilo para alinhar o menu à esquerda */
+        #menuTorneios {
+            float: left;
+            margin-left: 20px;
+        }
+
+        /* Centralizar a tabela horizontalmente */
+        #relatorioTable {
+            margin: 0 auto;
+            border-collapse: collapse; /* Para unificar as bordas das células */
+            width: 80%; /* Ajuste a largura conforme necessário */
+        }
+
+        /* Estilo das células da tabela */
+        #relatorioTable th, #relatorioTable td {
+            border: 1px solid #ccc; /* Borda de 1 pixel com cor cinza */
+            padding: 8px; /* Espaçamento interno das células */
+            text-align: center; /* Centraliza o texto nas células */
+        }
+
+        /* Estilo para o título da tabela */
+        #tituloTabela {
+            text-align: center;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+    </style>
+</head>
+<body>
+    <!-- Menu de Torneios -->
+    <ul id="menuTorneios">
+        <!-- Os itens do menu serão preenchidos aqui via JavaScript -->
+    </ul>
+
+    <h1 style="text-align:center">Relatório Anual</h1>
+
+    <div id="tituloTabela">
+        <!-- O título da tabela será preenchido aqui via JavaScript -->
+    </div>
+
+    <table id="relatorioTable">
+        <thead>
+            <tr>
+                <th>Jogador</th>
+                <th>Janeiro</th>
+                <th>Fevereiro</th>
+                <th>Março</th>
+                <th>Abril</th>
+                <th>Maio</th>
+                <th>Junho</th>
+                <th>Julho</th>
+                <th>Agosto</th>
+                <th>Setembro</th>
+                <th>Outubro</th>
+                <th>Novembro</th>
+                <th>Dezembro</th>
+                <th>Total</th>
+            </tr>
+        </thead>
+        <tbody>
+            <!-- Os dados da tabela serão preenchidos aqui via JavaScript -->
+        </tbody>
+    </table>
+
+    <!-- Informações Adicionais -->
+    <div id="informacoesAdicionais" style="text-align: center;">
+        Acumulado: <span id="acumulado"></span> - Jackpot: <span id="jackpot"></span> - Taxa de administração: <span id="taxaDeAdministracao"></span>
+    </div>
+
+    <script>
+        // Função para fazer a requisição GET com base no ano da URL
+        function fetchRelatorio() {
+            // Obter o parâmetro 'ano' da URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const ano = urlParams.get('ano');
+
+            // Verificar se o ano foi especificado na URL
+            if (!ano) {
+                console.error('Ano não especificado na URL.');
+
+		// Ocultar o título da tabela, a própria tabela e as informações adicionais
+        	const tituloTabela = document.getElementById('tituloTabela');
+        	tituloTabela.style.display = 'none';
+
+        	const tabela = document.getElementById('relatorioTable');
+        	tabela.style.display = 'none';
+
+        	const informacoesAdicionais = document.getElementById('informacoesAdicionais');
+        	informacoesAdicionais.style.display = 'none';
+                return;
+            }
+
+            // Fazer a requisição GET com o ano especificado
+            fetch(`http://localhost:8080/relatorio/anual?ano=${ano}`)
+                .then(response => response.json())
+                .then(data => {
+                    // Atualizar o título da tabela com o nomeDoTorneio
+                    const tituloTabela = document.getElementById('tituloTabela');
+                    tituloTabela.textContent = data.nomeDoTorneio;
+
+                    // Preencher a tabela com os dados do JSON
+                    const tabela = document.getElementById('relatorioTable');
+                    const tbody = tabela.querySelector('tbody');
+                    tbody.innerHTML = '';
+
+                    data.jogadores.forEach(jogador => {
+                        const row = document.createElement('tr');
+                        row.innerHTML = `
+                            <td>${jogador.nome}</td>
+                            ${getPontuacaoPorMes(jogador)}
+                            <td>${jogador.pontuacaoTotal}</td>
+                        `;
+                        tbody.appendChild(row);
+                    });
+
+                    // Preencher os atributos abaixo da tabela com os valores do JSON
+                    const informacoesAdicionais = document.getElementById('informacoesAdicionais');
+                    informacoesAdicionais.innerHTML = `Acumulado: <span id="acumulado">${data.acumulado}</span> - Jackpot: <span id="jackpot">${data.jackpot}</span> - Taxa de administração: <span id="taxaDeAdministracao">${data.taxaDeAdministracao}</span>`;
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar dados:', error);
+                });
+        }
+
+        // Função para obter a pontuação de cada jogador por mês
+        function getPontuacaoPorMes(jogador) {
+            const pontuacaoPorMes = new Array(12).fill(0); // Array com 12 meses (Janeiro a Dezembro), inicializado com 0
+            jogador.pontuacaoPorEtapa.forEach(etapa => {
+                const index = etapa.mesDaEtapa - 1; // O mês começa em 1, mas o índice do array começa em 0
+                pontuacaoPorMes[index] = etapa.pontuacaoDoJogadorNaEtapa;
+            });
+
+            return pontuacaoPorMes.map(pontuacao => `<td>${pontuacao}</td>`).join('');
+        }
+
+        // Função para gerar o menu de torneios
+        function generateTorneiosMenu() {
+            // Fazer a requisição JSON para obter a lista de torneios
+            fetch('http://localhost:8080/relatorio/listartorneios')
+                .then(response => response.json())
+                .then(data => {
+                    // Verificar se 'data' não está vazia
+                    if (!data || data.length === 0) {
+                        console.error('Nenhum torneio encontrado.');
+                        return;
+                    }
+
+                    // Limpar o conteúdo do menu
+                    const menuTorneios = document.getElementById('menuTorneios');
+                    menuTorneios.innerHTML = '';
+
+                    // Gerar os itens do menu com links para cada torneio
+                    data.forEach(torneio => {
+                        const listItem = document.createElement('li');
+                        const link = document.createElement('a');
+                        link.href = `/poker/index.html?ano=${torneio.anoDoTorneio}`;
+                        link.textContent = torneio.nomeDoTorneio;
+                        listItem.appendChild(link);
+                        menuTorneios.appendChild(listItem);
+                    });
+                })
+                .catch(error => {
+                    console.error('Erro ao buscar lista de torneios:', error);
+                });
+        }
+
+        // Chamar a função para buscar e preencher os dados
+        fetchRelatorio();
+
+        // Chamar a função para gerar o menu de torneios
+        generateTorneiosMenu();
+    </script>
+</body>
+</html>

@@ -1,8 +1,11 @@
+dentro diretorio pktour
+java -jar nome aplicação
+
 -- Classificação sem descartes
 
 SELECT p.player, SUM (pontuacao) AS total
 	FROM pkapp_ranking r, pkapp_players p
-	WHERE id_torneio_id =3
+	WHERE id_torneio_id =10
 	  and r.id_player_id = p.id
 	GROUP BY p.player
 	ORDER BY total DESC;
@@ -11,7 +14,7 @@ SELECT p.player, SUM (pontuacao) AS total
 
   SELECT p.player, SUM (buy_inn) AS total
   FROM pkapp_ranking r, pkapp_players p
-  WHERE id_torneio_id =3
+  WHERE id_torneio_id =10
     and r.id_player_id = p.id
   GROUP BY p.player
   ORDER BY total DESC;
@@ -20,7 +23,7 @@ SELECT p.player, SUM (pontuacao) AS total
 
 SELECT sum(buy_inn + qtd_rebuy)
 	FROM pkapp_ranking
-	WHERE id_torneio_id = 3
+	WHERE id_torneio_id = 10
 
 
 -- Etapas com descarte analitico
@@ -30,7 +33,7 @@ select p.player, x.pontuacao
      select id_player_id, pontuacao, row_number() over
             (partition by id_player_id order by pontuacao desc)
        from pkapp_ranking r
-      where r.id_torneio_id = 3
+      where r.id_torneio_id = 9
   ) x, pkapp_players p
  where x.id_player_id = p.id
    and x.row_number <= 9
@@ -43,7 +46,7 @@ select p.player, sum(x.pontuacao) as pontos
      select id_player_id, pontuacao, row_number() over
             (partition by id_player_id order by pontuacao desc)
        from pkapp_ranking r
-      where r.id_torneio_id = 3
+      where r.id_torneio_id = 9
   ) x, pkapp_players p
  where x.id_player_id = p.id
    and x.row_number <= 9

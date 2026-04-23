@@ -10,5 +10,7 @@ router.register(r'torneios', apiviews.TorneioViewSet,basename='torneio')
 
 urlpatterns = [
     path('', include(router.urls)),
-    path('api-auth/', include('rest_framework.urls', namespace='rest_framework'))
+    path('api-auth/', include('rest_framework.urls', namespace='rest_framework')),
+    path('blinds/<int:id>/niveis/', apiviews.blinds_niveis, name='blinds_niveis'),
+    path('config/som/',             apiviews.config_som,    name='config_som'),
 ]

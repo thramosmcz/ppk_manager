@@ -1,0 +1,29 @@
+<div class="form-group">
+  <label>Torneio</label>
+  <select name="id_torneio" class="form-control" required>
+    <option value="">— Selecione —</option>
+    {% for t in torneios %}
+    <option value="{{ t.id }}" {% if torneio_id == t.id|stringformat:"s" %}selected{% endif %}>{{ t.torneio }}</option>
+    {% endfor %}
+  </select>
+</div>
+<div class="form-group">
+  <label>Nome da Etapa</label>
+  <input type="text" name="etapa" class="form-control" required maxlength="30">
+</div>
+<div class="form-group">
+  <label>Local</label>
+  <input type="text" name="local" class="form-control" required maxlength="30">
+</div>
+<div class="form-group">
+  <label>Data</label>
+  <input type="date" name="data" class="form-control" required placeholder="dd-mm-yyyy">
+</div>
+<div class="form-group">
+  <label>Status</label>
+  <select name="status" class="form-control">
+    <option value="I">Inativa</option>
+    <option value="A">Aberta</option>
+    <option value="F">Finalizada</option>
+  </select>
+</div>

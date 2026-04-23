@@ -1,67 +1,181 @@
-<!DOCTYPE html>
-<html>
-<title>PKTOUR - Players</title>
-{% extends 'base.html' %}
-{% load bootstrap %}
-<head>
-	
-</head>
-<body>
-	{% block menu%}
-	<ul class="nav nav-pills">
-	  <li class="nav-item">
-	    <a class="nav-link active" href="{% url 'pkapp_index' %}">Home</a>
-	  </li>
-	  <li class="nav-item dropdown">
-	    <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Opçoes</a>
-	    <div class="dropdown-menu">
-	      <a class="dropdown-item" href="{% url 'pkapp_players' %}">Players</a>
-	      <div class="dropdown-divider"></div>
-	      <a class="dropdown-item" href="{% url 'pkapp_torneios' %}">Torneios</a>
-	      <div class="dropdown-divider"></div>
-	      <a class="dropdown-item" href="{% url 'pkapp_etapas' %}">Etapas</a>
-	      <div class="dropdown-divider"></div>
-	      <a class="dropdown-item" href="{% url 'pkapp_admetapa' %}">Adm. Etapa</a>
-	    </div>
-	  </li>
-	  <li class="nav-item dropdown">
-	    <a class="nav-link dropdown-toggle" data-toggle="dropdown" href="#" role="button" aria-haspopup="true" aria-expanded="false">Consultas</a>
-	    <div class="dropdown-menu">
-	      <a class="dropdown-item" href="{% url 'pkapp_ranking' %}">Ranking</a>
-	   </li>
-<!--	  <li class="nav-item">
-	    <a class="nav-link" href="#">Link</a>
-	  </li>
-	  <li class="nav-item">
-	    <a class="nav-link disabled" href="#">Disabled</a>
-	  </li>-->
-	</ul>
-{% endblock %}
-{%block main%}
-<div class="row">
-	<div class="col">
-<table class="table table-striped">
-  <thead class="thead-light">
-	    <tr>
-	     <!-- <th scope="col" width="5%">ID</th>-->
-	      <th scope="col" width="40%">Player</th>
-	      <th scope="col" width="35%">Email</th>
-	      <th scope="col" width="25%">Telefone</th>
-	      <th scope="col" width="5%">Participaçoes</th>
-	    </tr>
-  </thead>
-  <tbody>
-  	{% for players in players%}
-  	<tr>
-  		<th scope="row" class="text-success">{{players.player}}</th>
-  		<td class="text-info">{{players.email}}</td>
-  		<td class="text-info">{{players.telefone}}</td>
-  		<td class="text-danger">{{players.participacoes}}</td>
-  	</tr>
-  	{% endfor %}
-  </tbody>
-  
+{% extends 'pkapp/_base_dark.html' %}
+{% block title %}Players{% endblock %}
+{% block nav_players %}active{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center">
+  <div class="page-title"><i class="fas fa-users mr-2"></i>Players</div>
+  {% if request.user.is_superuser or request.user.profile.can_edit_players %}
+  <button class="btn btn-gold btn-sm" data-toggle="modal" data-target="#modalNovoPlayer">
+    <i class="fas fa-plus mr-1"></i> Novo Player
+  </button>
+  {% endif %}
+</div>
+
+<div class="card-dark">
+  <div class="mb-3">
+    <input type="text" id="searchInput" class="form-control" placeholder="&#128269; Buscar player..." style="max-width:300px">
+  </div>
+  {% if players %}
+  <div class="table-responsive">
+    <table class="table table-borderless mb-0" id="playersTable">
+      <thead>
+        <tr>
+          <th>#</th><th>Player</th><th>Email</th><th>Telefone</th>
+          <th>Rede Social</th><th>Participações</th><th>Pontos</th><th>Etapas</th>
+          {% if request.user.is_superuser or request.user.profile.can_edit_players %}<th></th>{% endif %}
+        </tr>
+      </thead>
+      <tbody>
+        {% for p in players %}
+        <tr>
+          <td style="color:#666">{{ forloop.counter }}</td>
+          <td><strong>{{ p.player }}</strong></td>
+          <td style="color:#aaa">{{ p.email }}</td>
+          <td style="color:#aaa">{{ p.telefone }}</td>
+          <td style="color:#aaa">{{ p.redesocial }}</td>
+          <td><span class="chip">{{ p.participacoes }}</span></td>
+          <td><strong style="color:#c9a84c">{{ p.total_pontos|default:"—" }}</strong></td>
+          <td><span class="chip">{{ p.total_etapas|default:"0" }}</span></td>
+          {% if request.user.is_superuser or request.user.profile.can_edit_players %}
+          <td class="text-right" style="white-space:nowrap">
+            <button class="btn btn-sm btn-outline-warning mr-1"
+              data-toggle="modal" data-target="#modalEditPlayer"
+              data-id="{{ p.id }}" data-player="{{ p.player }}" data-email="{{ p.email }}"
+              data-redesocial="{{ p.redesocial }}" data-telefone="{{ p.telefone }}"
+              data-participacoes="{{ p.participacoes }}">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="btn btn-sm btn-outline-danger"
+              data-toggle="modal" data-target="#modalDelPlayer"
+              data-id="{{ p.id }}" data-nome="{{ p.player }}">
+              <i class="fas fa-trash"></i>
+            </button>
+          </td>
+          {% endif %}
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty-state"><div><i class="fas fa-users"></i></div><p>Nenhum player cadastrado.</p></div>
+  {% endif %}
+</div>
+
+<!-- Modal Novo -->
+<div class="modal fade" id="modalNovoPlayer" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content" style="background:#16213e;border:1px solid #c9a84c44;color:#e0e0e0">
+      <div class="modal-header" style="border-bottom:1px solid #c9a84c44">
+        <h5 class="modal-title" style="color:#c9a84c"><i class="fas fa-user-plus mr-2"></i>Novo Player</h5>
+        <button type="button" class="close" data-dismiss="modal" style="color:#e0e0e0">&times;</button>
+      </div>
+      <form method="POST" action="{% url 'player_create' %}">
+        {% csrf_token %}
+        <div class="modal-body">
+          {% include 'pkapp/_player_fields.html' %}
+        </div>
+        <div class="modal-footer" style="border-top:1px solid #c9a84c44">
+          <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-gold btn-sm"><i class="fas fa-save mr-1"></i>Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Editar -->
+<div class="modal fade" id="modalEditPlayer" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content" style="background:#16213e;border:1px solid #c9a84c44;color:#e0e0e0">
+      <div class="modal-header" style="border-bottom:1px solid #c9a84c44">
+        <h5 class="modal-title" style="color:#c9a84c"><i class="fas fa-edit mr-2"></i>Editar Player</h5>
+        <button type="button" class="close" data-dismiss="modal" style="color:#e0e0e0">&times;</button>
+      </div>
+      <form method="POST" id="formEditPlayer" action="">
+        {% csrf_token %}
+        <div class="modal-body">
+          <div class="form-group">
+            <label>Nome <span style="color:#c94848">*</span></label>
+            <input type="text" name="player" id="edit_player" class="form-control" required maxlength="40">
+          </div>
+          <div class="form-group">
+            <label>Telefone <span style="color:#c94848">*</span></label>
+            <input type="text" name="telefone" id="edit_telefone" class="form-control" required maxlength="14">
+          </div>
+          <div class="form-group">
+            <label>Email</label>
+            <input type="email" name="email" id="edit_email" class="form-control" maxlength="40">
+          </div>
+          <div class="form-group">
+            <label>Rede Social</label>
+            <input type="text" name="redesocial" id="edit_redesocial" class="form-control" maxlength="30">
+          </div>
+          <div class="form-group">
+            <label>Participações</label>
+            <input type="number" name="participacoes" id="edit_participacoes" class="form-control" min="0">
+          </div>
+        </div>
+        <div class="modal-footer" style="border-top:1px solid #c9a84c44">
+          <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-gold btn-sm"><i class="fas fa-save mr-1"></i>Salvar</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal Excluir -->
+<div class="modal fade" id="modalDelPlayer" tabindex="-1">
+  <div class="modal-dialog modal-sm">
+    <div class="modal-content" style="background:#16213e;border:1px solid #c9484855;color:#e0e0e0">
+      <div class="modal-header" style="border-bottom:1px solid #c9484855">
+        <h5 class="modal-title" style="color:#c94848"><i class="fas fa-trash mr-2"></i>Excluir Player</h5>
+        <button type="button" class="close" data-dismiss="modal" style="color:#e0e0e0">&times;</button>
+      </div>
+      <form method="POST" id="formDelPlayer" action="">
+        {% csrf_token %}
+        <div class="modal-body">
+          Confirma a exclusão de <strong id="delPlayerNome"></strong>?
+        </div>
+        <div class="modal-footer" style="border-top:1px solid #c9484855">
+          <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
+          <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash mr-1"></i>Excluir</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
 {% endblock %}
 
-</body>
-</html>
+{% block extra_js %}
+<script>
+  // Busca
+  document.getElementById('searchInput').addEventListener('keyup', function() {
+    const val = this.value.toLowerCase();
+    document.querySelectorAll('#playersTable tbody tr').forEach(r => {
+      r.style.display = r.textContent.toLowerCase().includes(val) ? '' : 'none';
+    });
+  });
+
+  // Modal Editar
+  $('#modalEditPlayer').on('show.bs.modal', function(e) {
+    const btn = $(e.relatedTarget);
+    const id  = btn.data('id');
+    $('#formEditPlayer').attr('action', '/pkapp/players/' + id + '/editar/');
+    $('#edit_player').val(btn.data('player'));
+    $('#edit_email').val(btn.data('email'));
+    $('#edit_redesocial').val(btn.data('redesocial'));
+    $('#edit_telefone').val(btn.data('telefone'));
+    $('#edit_participacoes').val(btn.data('participacoes'));
+  });
+
+  // Modal Excluir
+  $('#modalDelPlayer').on('show.bs.modal', function(e) {
+    const btn = $(e.relatedTarget);
+    $(this).find('#formDelPlayer').attr('action', '/pkapp/players/' + btn.data('id') + '/excluir/');
+    $(this).find('#delPlayerNome').text(btn.data('nome'));
+  });
+</script>
+{% endblock %}

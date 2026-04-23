@@ -1,0 +1,77 @@
+<div class="form-group">
+  <label>Nome</label>
+  <input type="text" name="nome" class="form-control" required maxlength="50" value="{{ eb.nome|default:'' }}">
+</div>
+<div class="form-group">
+  <label>Descrição</label>
+  <input type="text" name="descricao" class="form-control" maxlength="200" value="{{ eb.descricao|default:'' }}">
+</div>
+<div class="section-title mt-3"><i class="fas fa-table mr-1"></i> Níveis</div>
+<div class="table-responsive">
+  <table class="table table-borderless mb-0" style="font-size:0.85rem">
+    <thead>
+      <tr>
+        <th style="color:#c9a84c;width:50px">#</th>
+        <th class="text-center">Small Blind</th>
+        <th class="text-center">Big Blind</th>
+        <th class="text-center">Ante</th>
+        <th class="text-center">Duração (min)</th>
+        <th class="text-center">Break após (min)</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody id="niveis-body">
+      {% if eb %}
+        {% for n in eb.niveis.all %}
+        <tr>
+          <td style="color:#c9a84c;font-weight:bold">{{ n.nivel }}</td>
+          <td><input type="number" name="small_blind" class="form-control form-control-sm" value="{{ n.small_blind }}" min="0" required></td>
+          <td><input type="number" name="big_blind"   class="form-control form-control-sm" value="{{ n.big_blind }}"   min="0" required></td>
+          <td><input type="number" name="ante"         class="form-control form-control-sm" value="{{ n.ante }}"         min="0"></td>
+          <td><input type="number" name="duracao_minutos"     class="form-control form-control-sm" value="{{ n.duracao_minutos }}"     min="1"></td>
+          <td><input type="number" name="break_apos_minutos"  class="form-control form-control-sm" value="{{ n.break_apos_minutos }}"  min="0"></td>
+          <td><button type="button" class="btn btn-sm btn-outline-danger btn-rm-nivel"><i class="fas fa-times"></i></button></td>
+        </tr>
+        {% endfor %}
+      {% else %}
+        <!-- 18 níveis padrão -->
+        {% for row in default_niveis %}
+        <tr>
+          <td style="color:#c9a84c;font-weight:bold">{{ forloop.counter }}</td>
+          <td><input type="number" name="small_blind" class="form-control form-control-sm" value="0" min="0" required></td>
+          <td><input type="number" name="big_blind"   class="form-control form-control-sm" value="0" min="0" required></td>
+          <td><input type="number" name="ante"         class="form-control form-control-sm" value="0" min="0"></td>
+          <td><input type="number" name="duracao_minutos"     class="form-control form-control-sm" value="20" min="1"></td>
+          <td><input type="number" name="break_apos_minutos"  class="form-control form-control-sm" value="0"  min="0"></td>
+          <td><button type="button" class="btn btn-sm btn-outline-danger btn-rm-nivel"><i class="fas fa-times"></i></button></td>
+        </tr>
+        {% endfor %}
+      {% endif %}
+    </tbody>
+  </table>
+</div>
+<button type="button" class="btn btn-sm mt-2" style="background:#0f3460;color:#c9a84c;border:1px solid #c9a84c44" id="add-nivel">
+  <i class="fas fa-plus mr-1"></i> Adicionar Nível
+</button>
+
+<script>
+(function() {
+  var tbody = document.getElementById('niveis-body');
+  document.getElementById('add-nivel').addEventListener('click', function() {
+    var i = tbody.rows.length + 1;
+    var tr = document.createElement('tr');
+    tr.innerHTML = '<td style="color:#c9a84c;font-weight:bold">' + i + '</td>'
+      + '<td><input type="number" name="small_blind" class="form-control form-control-sm" value="0" min="0" required></td>'
+      + '<td><input type="number" name="big_blind"   class="form-control form-control-sm" value="0" min="0" required></td>'
+      + '<td><input type="number" name="ante"         class="form-control form-control-sm" value="0" min="0"></td>'
+      + '<td><input type="number" name="duracao_minutos"    class="form-control form-control-sm" value="20" min="1"></td>'
+      + '<td><input type="number" name="break_apos_minutos" class="form-control form-control-sm" value="0"  min="0"></td>'
+      + '<td><button type="button" class="btn btn-sm btn-outline-danger btn-rm-nivel"><i class="fas fa-fas fa-times"></i></button></td>';
+    tbody.appendChild(tr);
+  });
+  tbody.addEventListener('click', function(e) {
+    var btn = e.target.closest('.btn-rm-nivel');
+    if (btn) btn.closest('tr').remove();
+  });
+})();
+</script>

@@ -1,12 +1,6 @@
 from django.contrib import admin
 from django.contrib.admin.filters import SimpleListFilter
-from .models import (
-	Players,
-	Torneios,
-	Etapas,
-	Ranking,
-	RankingTorneio
-	)
+from .models import Players, Torneios, Etapas, Ranking, RankingTorneio, UserProfile
 import math, datetime
 
 class EtapasDescarteFilter(SimpleListFilter):
@@ -46,11 +40,18 @@ class RankingAdmin(admin.ModelAdmin):
 		
 
 
+class UserProfileAdmin(admin.ModelAdmin):
+    list_display = ('user', 'can_view_players', 'can_edit_players', 'can_view_torneios',
+                    'can_edit_torneios', 'can_view_etapas', 'can_edit_etapas',
+                    'can_view_ranking', 'can_manage_users')
+    list_filter = ('can_manage_users',)
+
+
 # Register your models here.
 admin.site.register(Players, PlayersAdmin)
 admin.site.register(Torneios)
 admin.site.register(Etapas, EtapasList)
 admin.site.register(Ranking, RankingAdmin)
-# admin.site.register(RankingTorneio, RankingTorneioAdmin)
+admin.site.register(UserProfile, UserProfileAdmin)
 
 

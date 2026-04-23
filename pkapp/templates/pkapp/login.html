@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PKTOUR - Login</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
+  <style>
+    body { background-color: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; }
+    .login-card {
+      background-color: #16213e;
+      border: 1px solid #c9a84c55;
+      border-radius: 16px;
+      padding: 40px;
+      max-width: 400px;
+      margin: 80px auto;
+    }
+    .brand { color: #c9a84c; font-size: 2rem; font-weight: bold; letter-spacing: 4px; text-align: center; margin-bottom: 8px; }
+    .brand-sub { color: #888; font-size: 0.85rem; text-align: center; margin-bottom: 32px; letter-spacing: 2px; text-transform: uppercase; }
+    .form-control, .form-control:focus { background-color: #0f3460; border: 1px solid #c9a84c44; color: #e0e0e0; }
+    .form-control::placeholder { color: #666; }
+    label { color: #c9a84c; font-size: 0.82rem; text-transform: uppercase; letter-spacing: 1px; }
+    .btn-gold { background-color: #c9a84c; color: #1a1a2e; border: none; font-weight: bold; width: 100%; padding: 10px; border-radius: 8px; font-size: 1rem; }
+    .btn-gold:hover { background-color: #e0c060; }
+    .alert-danger { background-color: #3d1a1a; border-color: #c9484855; color: #ff8888; border-radius: 8px; }
+  </style>
+</head>
+<body>
+<div class="container">
+  <div class="login-card">
+    <div class="brand">&#9824; PKTOUR</div>
+    <div class="brand-sub">Sistema de Torneios de Poker</div>
+
+    {% if messages %}
+      {% for msg in messages %}
+      <div class="alert alert-danger">{{ msg }}</div>
+      {% endfor %}
+    {% endif %}
+
+    <form method="post">
+      {% csrf_token %}
+      <div class="form-group">
+        <label for="id_username"><i class="fas fa-user"></i> Usuário</label>
+        {{ form.username }}
+      </div>
+      <div class="form-group">
+        <label for="id_password"><i class="fas fa-lock"></i> Senha</label>
+        {{ form.password }}
+      </div>
+      <button type="submit" class="btn btn-gold mt-2">
+        <i class="fas fa-sign-in-alt"></i> Entrar
+      </button>
+    </form>
+  </div>
+</div>
+<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
+</body>
+</html>
