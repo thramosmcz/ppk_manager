@@ -75,34 +75,36 @@ WSGI_APPLICATION = 'pkproject.wsgi.application'
 
 
 # Database
+
+
 # https://docs.djangoproject.com/en/3.0/ref/settings/#databases
 
-DB_ENGINE = os.environ.get('DB_ENGINE', 'sqlite').lower()
-
-if DB_ENGINE == 'postgres':
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.environ.get('POSTGRES_DB', 'pktour'),
-            'USER': os.environ.get('POSTGRES_USER', 'tournament'),
-            'PASSWORD': os.environ.get('POSTGRES_PASSWORD', 'senha@123'),
-            'HOST': os.environ.get('POSTGRES_HOST', 'db'),
-            'PORT': os.environ.get('POSTGRES_PORT', '5432'),
-            'CONN_MAX_AGE': 500,
-        }
+DATABASES = {
+    'default': {
+        'ENGINE': 'django.db.backends.postgresql',
+        'NAME': 'postgres',
+        'USER': 'tournament',
+        'PASSWORD': 'Senha@123', 
+        'HOST': 'localhost', 
+#        'HOST': 'db', #para rodar em docker
+        'PORT': '5432',
+        'CONN_MAX_AGE': 500,
     }
-else:
-    DATABASES = {
-        'default': {
-            'ENGINE': 'django.db.backends.sqlite3',
- #           'NAME': os.environ.get('SQLITE_PATH', os.path.join(BASE_DIR, 'db.sqlite3')),
-             'NAME': os.environ.get('SQLITE_PATH', '/data/db.sqlite3'),
-        }
-    }
-    print("caminho")
-    print(os.environ.get('SQLITE_PATH', os.path.join(BASE_DIR, 'db.sqlite3')))
 
+}
 
+# config de database para Railway
+
+# import os
+# import dj_database_url
+
+# DATABASES = {
+#     'default': dj_database_url.config(
+#         default=os.getenv('DATABASE_URL'),
+#         conn_max_age=600,
+#         ssl_require=True
+#     )
+# }
 
 # Password validation
 # https://docs.djangoproject.com/en/3.0/ref/settings/#auth-password-validators
