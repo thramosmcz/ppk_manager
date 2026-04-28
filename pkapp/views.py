@@ -148,7 +148,7 @@ def pkapp_torneios(request):
     torneios = Torneios.objects.annotate(
         num_etapas=Count('etapas', distinct=True),
         num_players=Count('ranking__id_player', distinct=True),
-    )
+    ).order_by('torneio')
     estruturas_blinds = EstruturaBlinds.objects.all()
     return render(request, 'pkapp/torneios.html', {
         'torneios': torneios,
@@ -416,6 +416,18 @@ def user_edit(request, id):
         user.email      = request.POST.get('email', user.email)
         is_active       = request.POST.get('is_active')
         user.is_active  = bool(is_active)
+
+        nova_senha = request.POST.get('nova_senha', '').strip()
+        confirma   = request.POST.get('confirma_senha', '').strip()
+        if nova_senha:
+            if len(nova_senha) < 6:
+                messages.error(request, 'A nova senha deve ter pelo menos 6 caracteres.')
+                return redirect('user_edit', id=id)
+            if nova_senha != confirma:
+                messages.error(request, 'A confirmação de senha não confere.')
+                return redirect('user_edit', id=id)
+            user.set_password(nova_senha)
+
         user.save()
         if profile_form.is_valid():
             profile_form.save()
@@ -426,6 +438,42 @@ def user_edit(request, id):
         'profile_form': profile_form,
         'action': 'Editar',
     })
+
+
+@login_required_custom
+def meu_perfil(request):
+    user = request.user
+    if request.method == 'POST':
+        action = request.POST.get('action')
+
+        if action == 'dados':
+            user.first_name = request.POST.get('first_name', '').strip()
+            user.last_name  = request.POST.get('last_name', '').strip()
+            user.email      = request.POST.get('email', '').strip()
+            user.save()
+            messages.success(request, 'Dados atualizados com sucesso.')
+
+        elif action == 'senha':
+            senha_atual = request.POST.get('senha_atual', '')
+            nova_senha  = request.POST.get('nova_senha', '')
+            confirma    = request.POST.get('confirma_senha', '')
+            if not user.check_password(senha_atual):
+                messages.error(request, 'Senha atual incorreta.')
+            elif len(nova_senha) < 6:
+                messages.error(request, 'A nova senha deve ter pelo menos 6 caracteres.')
+            elif nova_senha != confirma:
+                messages.error(request, 'A confirmação de senha não confere.')
+            else:
+                user.set_password(nova_senha)
+                user.save()
+                # re-autentica para não deslogar
+                from django.contrib.auth import update_session_auth_hash
+                update_session_auth_hash(request, user)
+                messages.success(request, 'Senha alterada com sucesso.')
+
+        return redirect('meu_perfil')
+
+    return render(request, 'pkapp/meu_perfil.html', {'edit_user': user})
 
 
 @permission_required('can_manage_users')

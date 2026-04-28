@@ -38,6 +38,9 @@ urlpatterns = [
     path('ranking',                            views.pkapp_ranking,       name='pkapp_ranking'),
     path('pontuacao_global',                   views.pontuacao_global,    name='pkapp_pontuacao_global'),
 
+    # Perfil do usuário logado
+    path('perfil/',                            views.meu_perfil,          name='meu_perfil'),
+
     # Usuários
     path('usuarios/',                          views.user_list,           name='user_list'),
     path('usuarios/novo/',                     views.user_create,         name='user_create'),

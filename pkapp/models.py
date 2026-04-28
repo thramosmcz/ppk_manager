@@ -50,6 +50,9 @@ class Torneios(models.Model):
     def __str__(self):
         return self.torneio
 
+    class Meta:
+        ordering = ['torneio']
+
 
 class ConfiguracaoSom(models.Model):
     user             = models.OneToOneField(User, on_delete=models.CASCADE, related_name='config_som')
