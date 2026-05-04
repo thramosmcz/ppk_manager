@@ -13,26 +13,30 @@
       font-family: 'Segoe UI', sans-serif;
       overflow: hidden;
       height: 100vh;
+      width: 100vw;
     }
     .container {
       display: grid;
-      grid-template-columns: 300px 1fr 300px;
-      grid-template-rows: 120px 1fr;
-      gap: 20px;
-      padding: 20px;
+      grid-template-columns: 240px 1fr 240px;
+      grid-template-rows: 80px 1fr;
+      gap: 10px;
+      padding: 10px 10px 60px 10px; /* bottom padding para os botões não sobrepor */
       height: 100vh;
     }
     .header {
       grid-column: 1 / -1;
       background: linear-gradient(135deg, #1a2332 0%, #0f1922 100%);
       border: 2px solid #c9a84c;
-      border-radius: 12px;
-      padding: 20px;
+      border-radius: 10px;
+      padding: 10px 20px;
       text-align: center;
-      box-shadow: 0 8px 32px rgba(201, 168, 76, 0.2);
+      box-shadow: 0 4px 16px rgba(201, 168, 76, 0.2);
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
     }
     .title {
-      font-size: 2.5rem;
+      font-size: 1.6rem;
       font-weight: bold;
       color: #c9a84c;
       text-transform: uppercase;
@@ -40,35 +44,35 @@
       text-shadow: 0 0 20px rgba(201, 168, 76, 0.5);
     }
     .subtitle {
-      font-size: 1rem;
+      font-size: 0.8rem;
       color: #aaa;
-      margin-top: 8px;
+      margin-top: 4px;
       letter-spacing: 2px;
     }
     .panel {
       background: rgba(22, 33, 62, 0.8);
       border: 1px solid #c9a84c33;
-      border-radius: 12px;
-      padding: 20px;
+      border-radius: 10px;
+      padding: 12px;
       overflow-y: auto;
     }
     .panel-title {
-      font-size: 1.2rem;
+      font-size: 0.85rem;
       color: #c9a84c;
       text-transform: uppercase;
       letter-spacing: 2px;
       border-bottom: 2px solid #c9a84c44;
-      padding-bottom: 10px;
-      margin-bottom: 15px;
+      padding-bottom: 6px;
+      margin-bottom: 10px;
     }
     .stat {
       display: flex;
       justify-content: space-between;
-      padding: 8px 0;
+      padding: 5px 0;
       border-bottom: 1px solid #ffffff11;
     }
-    .stat-label { color: #aaa; font-size: 0.9rem; }
-    .stat-value { color: #e0e0e0; font-weight: bold; font-size: 1rem; }
+    .stat-label { color: #aaa; font-size: 0.78rem; }
+    .stat-value { color: #e0e0e0; font-weight: bold; font-size: 0.85rem; }
     .center-panel {
       display: flex;
       flex-direction: column;
@@ -76,7 +80,7 @@
       align-items: center;
       background: linear-gradient(135deg, #1a2332 0%, #0f1922 100%);
       border: 3px solid #c9a84c;
-      border-radius: 12px;
+      border-radius: 10px;
       box-shadow: 0 8px 32px rgba(201, 168, 76, 0.3);
       position: relative;
       overflow: hidden;
@@ -95,29 +99,30 @@
     }
     .center-panel > * { position: relative; z-index: 1; }
     .level-label {
-      font-size: 1.5rem;
+      font-size: 1rem;
       color: #aaa;
       text-transform: uppercase;
       letter-spacing: 3px;
     }
     .blinds {
-      font-size: 5rem;
+      font-size: 3.2rem;
       font-weight: bold;
       color: #c9a84c;
-      margin: 20px 0;
+      margin: 10px 0;
       text-shadow: 0 0 30px rgba(201, 168, 76, 0.6);
     }
     .ante {
-      font-size: 1.2rem;
+      font-size: 0.95rem;
       color: #aaa;
-      margin-bottom: 30px;
+      margin-bottom: 14px;
     }
     .timer {
-      font-size: 8rem;
+      font-size: 5.5rem;
       font-weight: bold;
       color: #e0e0e0;
       font-family: 'Courier New', monospace;
       text-shadow: 0 0 40px rgba(255, 255, 255, 0.3);
+      line-height: 1;
     }
     .timer.warning { color: #ff9800; }
     .timer.danger { color: #f44336; animation: pulse 1s infinite; }
@@ -126,53 +131,57 @@
       50% { opacity: 0.6; }
     }
     .next-blinds {
-      font-size: 1.5rem;
+      font-size: 1rem;
       color: #aaa;
-      margin-top: 20px;
+      margin-top: 12px;
     }
     .next-blinds span { color: #c9a84c; font-weight: bold; }
     .player-list {
-      max-height: calc(100vh - 200px);
+      max-height: calc(100vh - 260px);
       overflow-y: auto;
     }
     .player-item {
-      padding: 10px;
-      margin: 5px 0;
+      padding: 5px 8px;
+      margin: 3px 0;
       background: rgba(201, 168, 76, 0.1);
       border-left: 3px solid #c9a84c;
       border-radius: 4px;
-      font-size: 0.95rem;
+      font-size: 0.8rem;
     }
     .player-item.eliminated {
       opacity: 0.5;
       border-left-color: #666;
     }
     .player-name { color: #e0e0e0; font-weight: bold; }
-    .player-pos { color: #c9a84c; font-size: 0.85rem; }
+    .player-pos { color: #c9a84c; font-size: 0.75rem; }
     .payout-item {
       display: flex;
       justify-content: space-between;
-      padding: 8px 12px;
-      margin: 5px 0;
+      padding: 5px 8px;
+      margin: 3px 0;
       background: rgba(201, 168, 76, 0.1);
       border-radius: 4px;
+      font-size: 0.82rem;
     }
     .payout-pos { color: #c9a84c; font-weight: bold; }
     .payout-value { color: #28a745; font-weight: bold; }
     .controls {
       position: fixed;
-      bottom: 20px;
-      right: 20px;
+      bottom: 10px;
+      left: 50%;
+      transform: translateX(-50%);
       display: flex;
-      gap: 10px;
+      gap: 8px;
+      z-index: 50;
     }
     .btn {
-      padding: 12px 24px;
+      padding: 8px 16px;
       border: none;
       border-radius: 8px;
-      font-size: 1rem;
+      font-size: 0.85rem;
       cursor: pointer;
       transition: all 0.3s;
+      white-space: nowrap;
     }
     .btn-play { background: #28a745; color: white; }
     .btn-pause { background: #ff9800; color: white; }

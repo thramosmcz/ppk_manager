@@ -65,3 +65,4 @@ $RECYCLE.BIN/
 *.pyc
 pkapp/__init__.pyc
 pkapp/models.pyc
+deploy_aws_ec2.txt
