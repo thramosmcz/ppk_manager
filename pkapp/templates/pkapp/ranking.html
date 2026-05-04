@@ -39,6 +39,9 @@
           <th style="color:#c9a84c">{{ mes }}</th>
           {% endfor %}
           <th style="color:#c9a84c">Total</th>
+          <th style="color:#FFD700" title="Critério de desempate: 1º lugares"><i class="fas fa-trophy"></i> 1º</th>
+          <th style="color:#C0C0C0" title="Critério de desempate: 2º lugares"><i class="fas fa-trophy"></i> 2º</th>
+          <th style="color:#CD7F32" title="Critério de desempate: 3º lugares"><i class="fas fa-trophy"></i> 3º</th>
         </tr>
       </thead>
       <tbody>
@@ -56,12 +59,15 @@
           <td style="{% if descartado %}color:#c94848;font-weight:bold{% elif pts == 0 %}color:#555{% else %}color:#e0e0e0{% endif %}">{{ pts }}</td>
           {% endfor %}
           <td style="color:#c9a84c;font-weight:bold">{{ r.total_pontos }}</td>
+          <td style="color:#FFD700;font-weight:bold">{{ r.primeiros }}</td>
+          <td style="color:#C0C0C0;font-weight:bold">{{ r.segundos }}</td>
+          <td style="color:#CD7F32;font-weight:bold">{{ r.terceiros }}</td>
         </tr>
         {% endfor %}
       </tbody>
       <tfoot>
         <tr>
-          <td colspan="15" style="text-align:center;color:#aaa;font-size:0.8rem;padding-top:12px;border-top:1px solid #c9a84c33">
+          <td colspan="18" style="text-align:center;color:#aaa;font-size:0.8rem;padding-top:12px;border-top:1px solid #c9a84c33">
             Acumulado: <strong style="color:#e0e0e0">{{ financeiro.acumulado|floatformat:0 }}</strong>
             &nbsp;&nbsp;—&nbsp;&nbsp;
             Jackpot: <strong style="color:#e0e0e0">{{ financeiro.jackpot|floatformat:0 }}</strong>

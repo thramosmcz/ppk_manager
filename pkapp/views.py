@@ -275,6 +275,7 @@ def _calcular_ranking_com_descarte(torneio):
     - Preenche com 0 os meses sem participação.
     - Descarta as 3 menores pontuações.
     - Total = soma das demais.
+    Critérios de desempate (em ordem): 1º lugares, 2º lugares, 3º lugares.
     Retorna também acumulado, jackpot e taxa de administração do torneio.
     """
     from collections import defaultdict
@@ -287,8 +288,9 @@ def _calcular_ranking_com_descarte(torneio):
     )
 
     # pontos_por_mes[player_id][mes(1-12)] = pontuacao
-    pontos_por_mes  = defaultdict(lambda: defaultdict(int))
+    pontos_por_mes    = defaultdict(lambda: defaultdict(int))
     premio_por_player = defaultdict(float)
+    vitorias          = defaultdict(lambda: defaultdict(int))  # vitorias[player_id][posicao]
     nomes = {}
 
     total_buy_inn = 0
@@ -301,12 +303,14 @@ def _calcular_ranking_com_descarte(torneio):
         nomes[r.id_player.id] = r.id_player.player
         total_buy_inn += r.buy_inn
         total_rebuy   += r.qtd_rebuy
+        if r.posicao in (1, 2, 3):
+            vitorias[r.id_player.id][r.posicao] += 1
 
     # Financeiro (mesma fórmula do JAR)
-    vlr_buyinn = float(torneio.vlr_buyinn)
-    vlr_rebuy  = float(torneio.vlr_rebuy)
+    vlr_buyinn  = float(torneio.vlr_buyinn)
+    vlr_rebuy   = float(torneio.vlr_rebuy)
     vlr_jackpot = float(torneio.vlr_jackpot)
-    vlr_txadm  = float(torneio.vlr_txadm)
+    vlr_txadm   = float(torneio.vlr_txadm)
 
     acumulado = (total_buy_inn + total_rebuy) * vlr_buyinn + total_buy_inn * vlr_txadm
     jackpot   = (total_buy_inn + total_rebuy) * vlr_jackpot
@@ -322,7 +326,6 @@ def _calcular_ranking_com_descarte(torneio):
         total = sum(pontos_ordenados[3:])
 
         # Marca quais meses foram descartados
-        # Usa cópia para consumir os descartados um a um (lida com valores repetidos)
         descartados_restantes = pontos_ordenados[:3][:]
         pontos_meses_marcados = []
         for p in pontos_12:
@@ -332,14 +335,22 @@ def _calcular_ranking_com_descarte(torneio):
             else:
                 pontos_meses_marcados.append((p, False))
 
+        p1 = vitorias[player_id].get(1, 0)
+        p2 = vitorias[player_id].get(2, 0)
+        p3 = vitorias[player_id].get(3, 0)
+
         ranking.append({
             'player':       nomes[player_id],
-            'pontos_meses': pontos_meses_marcados,  # lista de (valor, descartado)
+            'pontos_meses': pontos_meses_marcados,
             'total_pontos': total,
             'total_premio': premio_por_player[player_id],
+            'primeiros':    p1,
+            'segundos':     p2,
+            'terceiros':    p3,
         })
 
-    ranking.sort(key=lambda x: x['total_pontos'], reverse=True)
+    # Ordenação: total desc, desempate por 1º, 2º, 3º lugares
+    ranking.sort(key=lambda x: (x['total_pontos'], x['primeiros'], x['segundos'], x['terceiros']), reverse=True)
 
     return ranking, {
         'acumulado': acumulado,
