@@ -1,4 +1,5 @@
 from django.shortcuts import get_object_or_404
+from django.db.models import Sum
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
@@ -161,7 +162,7 @@ class EtapaViewSet(viewsets.ViewSet):
 
     @action(detail=True, methods=['post'])
     def eliminar(self, request, pk=None):
-        """Elimina um player registrando posição e pontuação."""
+        """Elimina um player registrando posição, pontuação e prêmio."""
         etapa = get_object_or_404(Etapas, pk=pk)
         json_data = json.loads(request.body)
         player_id = json_data.get('player_id')
@@ -178,6 +179,27 @@ class EtapaViewSet(viewsets.ViewSet):
         pontuacao = PONTUACAO_POR_POSICAO.get(posicao, 0)
         ranking.posicao   = posicao
         ranking.pontuacao = pontuacao
+
+        # Calcula prêmio para os 3 primeiros (50% / 30% / 20% do prize pool)
+        if posicao in (1, 2, 3):
+            torneio = etapa.id_torneio
+            inscritos = Ranking.objects.filter(id_etapa=etapa)
+            total_buyins = inscritos.count()
+            total_rebuys = inscritos.aggregate(total=Sum('qtd_rebuy'))['total'] or 0
+
+            vlr_buyinn  = float(torneio.vlr_buyinn)
+            vlr_rebuy   = float(torneio.vlr_rebuy)
+            vlr_txadm   = float(torneio.vlr_txadm)
+            vlr_jackpot = float(torneio.vlr_jackpot)
+
+            arrecadado = total_buyins * vlr_buyinn + total_rebuys * vlr_rebuy
+            jackpot    = (total_buyins + total_rebuys) * vlr_jackpot
+            txadm      = total_buyins * vlr_txadm
+            prizepool  = arrecadado - jackpot - txadm
+
+            PAYOUT = {1: 0.50, 2: 0.30, 3: 0.20}
+            ranking.premio = round(prizepool * PAYOUT[posicao], 2)
+
         ranking.save()
 
         # Verifica se todos os inscritos foram eliminados -> finaliza etapa
