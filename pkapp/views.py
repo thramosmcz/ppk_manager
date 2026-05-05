@@ -1,6 +1,6 @@
 from django.shortcuts import render, redirect, get_object_or_404
 from django.http import HttpResponse
-from django.db.models import Sum, Count
+from django.db.models import Sum, Count, Q
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.models import User
 from django.contrib import messages
@@ -47,40 +47,77 @@ def logout_view(request):
 
 @login_required_custom
 def dashboard(request):
+    torneio_id  = request.GET.get('torneio', '')
+    torneios    = Torneios.objects.order_by('torneio')
+
+    qs = Ranking.objects.all()
+    if torneio_id and torneio_id.isdigit():
+        qs = qs.filter(id_torneio_id=torneio_id)
+
     total_players  = Players.objects.count()
     total_torneios = Torneios.objects.count()
     total_etapas   = Etapas.objects.count()
     etapas_abertas = Etapas.objects.filter(status='A').count()
 
-    ultimas_etapas = Etapas.objects.select_related('id_torneio').order_by('-data')[:5]
+    # Top por participações
+    top_participacoes = (
+        qs.values('id_player__player')
+        .annotate(total=Count('id'))
+        .order_by('-total')[:10]
+    )
 
-    top_players = (
-        Ranking.objects
+    # Top por classificações (1º, 2º, 3º)
+    top_classificacoes = (
+        qs.filter(posicao__in=[1, 2, 3])
         .values('id_player__player')
-        .annotate(total_pontos=Sum('pontuacao'), participacoes=Count('id'))
-        .order_by('-total_pontos')[:5]
+        .annotate(
+            primeiros=Count('id', filter=Q(posicao=1)),
+            segundos =Count('id', filter=Q(posicao=2)),
+            terceiros=Count('id', filter=Q(posicao=3)),
+        )
+        .order_by('-primeiros', '-segundos', '-terceiros')[:10]
     )
 
-    torneios = Torneios.objects.annotate(
-        num_etapas=Count('etapas', distinct=True),
-        num_players=Count('ranking__id_player', distinct=True),
+    # Top por resultado financeiro (premio - custo)
+    top_resultado = []
+    players_fin = (
+        qs.values('id_player__player', 'id_player_id')
+        .annotate(
+            total_premio=Sum('premio'),
+            total_buyins=Count('id'),
+            total_rebuys=Sum('qtd_rebuy'),
+        )
     )
-
-    jackpots = (
-        Ranking.objects
-        .values('id_torneio__torneio', 'id_torneio_id')
-        .annotate(total_entradas=Sum('buy_inn'), total_rebuys=Sum('qtd_rebuy'))
-    )
+    for p in players_fin:
+        torneio_qs = Torneios.objects.filter(ranking__id_player_id=p['id_player_id'])
+        if torneio_id and torneio_id.isdigit():
+            torneio_qs = torneio_qs.filter(id=torneio_id)
+        custo = 0.0
+        for t in torneio_qs.distinct():
+            r_player = qs.filter(id_player_id=p['id_player_id'], id_torneio=t)
+            n_buyins = r_player.count()
+            n_rebuys = r_player.aggregate(s=Sum('qtd_rebuy'))['s'] or 0
+            custo += n_buyins * float(t.vlr_buyinn) + n_rebuys * float(t.vlr_rebuy)
+        resultado = float(p['total_premio'] or 0) - custo
+        top_resultado.append({
+            'player':    p['id_player__player'],
+            'premio':    float(p['total_premio'] or 0),
+            'custo':     custo,
+            'resultado': resultado,
+        })
+    top_resultado.sort(key=lambda x: x['resultado'], reverse=True)
+    top_resultado = top_resultado[:10]
 
     context = {
-        'total_players': total_players,
-        'total_torneios': total_torneios,
-        'total_etapas': total_etapas,
-        'etapas_abertas': etapas_abertas,
-        'ultimas_etapas': ultimas_etapas,
-        'top_players': top_players,
-        'torneios': torneios,
-        'jackpots': jackpots,
+        'total_players':      total_players,
+        'total_torneios':     total_torneios,
+        'total_etapas':       total_etapas,
+        'etapas_abertas':     etapas_abertas,
+        'torneios':           torneios,
+        'torneio_id':         torneio_id,
+        'top_participacoes':  top_participacoes,
+        'top_classificacoes': top_classificacoes,
+        'top_resultado':      top_resultado,
     }
     return render(request, 'pkapp/dashboard.html', context)
 

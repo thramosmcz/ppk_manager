@@ -1,279 +1,156 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PKTOUR - Dashboard</title>
-  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/css/bootstrap.min.css">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
-  <style>
-    body { background-color: #1a1a2e; color: #e0e0e0; font-family: 'Segoe UI', sans-serif; }
-    .navbar { background-color: #16213e; border-bottom: 2px solid #c9a84c; }
-    .navbar-brand { color: #c9a84c !important; font-weight: bold; font-size: 1.4rem; letter-spacing: 2px; }
-    .nav-link { color: #e0e0e0 !important; }
-    .nav-link:hover { color: #c9a84c !important; }
+{% extends 'pkapp/_base_dark.html' %}
+{% block title %}Dashboard{% endblock %}
 
-    .stat-card {
-      background: linear-gradient(135deg, #16213e, #0f3460);
-      border: 1px solid #c9a84c44;
-      border-radius: 12px;
-      padding: 24px;
-      text-align: center;
-      transition: transform 0.2s;
-    }
-    .stat-card:hover { transform: translateY(-4px); }
-    .stat-card .icon { font-size: 2.2rem; margin-bottom: 10px; }
-    .stat-card .value { font-size: 2.5rem; font-weight: bold; color: #c9a84c; }
-    .stat-card .label { font-size: 0.85rem; color: #aaa; text-transform: uppercase; letter-spacing: 1px; }
+{% block content %}
+<div class="d-flex justify-content-between align-items-center">
+  <div class="page-title"><i class="fas fa-tachometer-alt mr-2"></i>Dashboard</div>
 
-    .section-title {
-      color: #c9a84c;
-      font-size: 1rem;
-      text-transform: uppercase;
-      letter-spacing: 2px;
-      border-bottom: 1px solid #c9a84c44;
-      padding-bottom: 8px;
-      margin-bottom: 16px;
-    }
+  <!-- Filtro de torneio -->
+  <form method="GET" class="form-inline">
+    <label class="mr-2" style="color:#aaa;font-size:0.85rem">Filtrar:</label>
+    <select name="torneio" class="form-control form-control-sm mr-2" style="min-width:180px">
+      <option value="">Todos os torneios</option>
+      {% for t in torneios %}
+      <option value="{{ t.id }}" {% if torneio_id == t.id|stringformat:"s" %}selected{% endif %}>{{ t.torneio }}</option>
+      {% endfor %}
+    </select>
+    <button type="submit" class="btn btn-gold btn-sm mr-2">Filtrar</button>
+    {% if torneio_id %}
+    <a href="/" class="btn btn-sm" style="background:#0f3460;color:#aaa;border:1px solid #ffffff22">Limpar</a>
+    {% endif %}
+  </form>
+</div>
 
-    .card-dark {
-      background-color: #16213e;
-      border: 1px solid #c9a84c33;
-      border-radius: 12px;
-      padding: 20px;
-    }
-
-    table { color: #e0e0e0 !important; }
-    thead th { color: #c9a84c; border-bottom: 1px solid #c9a84c44 !important; font-size: 0.8rem; text-transform: uppercase; letter-spacing: 1px; }
-    tbody tr { border-bottom: 1px solid #ffffff11; }
-    tbody tr:hover { background-color: #0f3460; }
-    td, th { border-top: none !important; vertical-align: middle !important; }
-
-    .badge-status-A { background-color: #28a745; color: white; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; }
-    .badge-status-I { background-color: #6c757d; color: white; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; }
-    .badge-status-F { background-color: #c9a84c; color: #1a1a2e; padding: 3px 10px; border-radius: 20px; font-size: 0.75rem; }
-
-    .rank-medal-1 { color: #FFD700; }
-    .rank-medal-2 { color: #C0C0C0; }
-    .rank-medal-3 { color: #CD7F32; }
-
-    .progress { background-color: #0f3460; height: 6px; border-radius: 4px; }
-    .progress-bar { background-color: #c9a84c; }
-
-    .chip { display: inline-block; background: #c9a84c22; border: 1px solid #c9a84c55; border-radius: 20px; padding: 2px 12px; font-size: 0.8rem; color: #c9a84c; }
-  </style>
-</head>
-<body>
-
-<nav class="navbar navbar-expand-lg">
-  <a class="navbar-brand" href="#">&#9824; PKTOUR</a>
-  <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navMenu">
-    <span style="color:#c9a84c"><i class="fas fa-bars"></i></span>
-  </button>
-  <div class="collapse navbar-collapse" id="navMenu">
-    <ul class="navbar-nav ml-auto">
-      <li class="nav-item"><a class="nav-link" href="/pkapp/players">Players</a></li>
-      <li class="nav-item"><a class="nav-link" href="/pkapp/torneios">Torneios</a></li>
-      <li class="nav-item"><a class="nav-link" href="/pkapp/etapas">Etapas</a></li>
-      <li class="nav-item"><a class="nav-link" href="/pkapp/ranking">Ranking</a></li>
-      <li class="nav-item"><a class="nav-link" href="/admin">Admin</a></li>
-    </ul>
+<!-- Cards de totais -->
+<div class="row mb-4">
+  <div class="col-6 col-md-3 mb-3">
+    <div class="card-dark text-center" style="background:linear-gradient(135deg,#16213e,#0f3460)">
+      <div style="font-size:2rem;margin-bottom:6px">&#9824;</div>
+      <div style="font-size:2.2rem;font-weight:bold;color:#c9a84c">{{ total_players }}</div>
+      <div style="font-size:0.8rem;color:#aaa;text-transform:uppercase;letter-spacing:1px">Players</div>
+    </div>
   </div>
-</nav>
+  <div class="col-6 col-md-3 mb-3">
+    <div class="card-dark text-center" style="background:linear-gradient(135deg,#16213e,#0f3460)">
+      <div style="font-size:2rem;margin-bottom:6px">&#127942;</div>
+      <div style="font-size:2.2rem;font-weight:bold;color:#c9a84c">{{ total_torneios }}</div>
+      <div style="font-size:0.8rem;color:#aaa;text-transform:uppercase;letter-spacing:1px">Torneios</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3 mb-3">
+    <div class="card-dark text-center" style="background:linear-gradient(135deg,#16213e,#0f3460)">
+      <div style="font-size:2rem;margin-bottom:6px">&#128197;</div>
+      <div style="font-size:2.2rem;font-weight:bold;color:#c9a84c">{{ total_etapas }}</div>
+      <div style="font-size:0.8rem;color:#aaa;text-transform:uppercase;letter-spacing:1px">Etapas</div>
+    </div>
+  </div>
+  <div class="col-6 col-md-3 mb-3">
+    <div class="card-dark text-center" style="background:linear-gradient(135deg,#16213e,#0f3460)">
+      <div style="font-size:2rem;margin-bottom:6px;color:#28a745">&#9679;</div>
+      <div style="font-size:2.2rem;font-weight:bold;color:#28a745">{{ etapas_abertas }}</div>
+      <div style="font-size:0.8rem;color:#aaa;text-transform:uppercase;letter-spacing:1px">Etapas Abertas</div>
+    </div>
+  </div>
+</div>
 
-<div class="container-fluid py-4 px-4">
+<div class="row">
 
-  <!-- Cards de totais -->
-  <div class="row mb-4">
-    <div class="col-6 col-md-3 mb-3">
-      <div class="stat-card">
-        <div class="icon">&#9824;</div>
-        <div class="value">{{ total_players }}</div>
-        <div class="label">Players</div>
-      </div>
-    </div>
-    <div class="col-6 col-md-3 mb-3">
-      <div class="stat-card">
-        <div class="icon">&#127942;</div>
-        <div class="value">{{ total_torneios }}</div>
-        <div class="label">Torneios</div>
-      </div>
-    </div>
-    <div class="col-6 col-md-3 mb-3">
-      <div class="stat-card">
-        <div class="icon">&#128197;</div>
-        <div class="value">{{ total_etapas }}</div>
-        <div class="label">Etapas</div>
-      </div>
-    </div>
-    <div class="col-6 col-md-3 mb-3">
-      <div class="stat-card">
-        <div class="icon" style="color:#28a745">&#9679;</div>
-        <div class="value" style="color:#28a745">{{ etapas_abertas }}</div>
-        <div class="label">Etapas Abertas</div>
-      </div>
+  <!-- Top Participações -->
+  <div class="col-md-4 mb-4">
+    <div class="card-dark h-100">
+      <div class="section-title"><i class="fas fa-users mr-2"></i>Top Participações</div>
+      {% if top_participacoes %}
+      <table class="table table-borderless mb-0" style="font-size:0.85rem">
+        <thead><tr><th>#</th><th>Player</th><th class="text-right">Etapas</th></tr></thead>
+        <tbody>
+          {% for p in top_participacoes %}
+          <tr>
+            <td>
+              {% if forloop.counter == 1 %}<i class="fas fa-medal" style="color:#FFD700"></i>
+              {% elif forloop.counter == 2 %}<i class="fas fa-medal" style="color:#C0C0C0"></i>
+              {% elif forloop.counter == 3 %}<i class="fas fa-medal" style="color:#CD7F32"></i>
+              {% else %}<span style="color:#aaa">{{ forloop.counter }}</span>{% endif %}
+            </td>
+            <td>{{ p.id_player__player }}</td>
+            <td class="text-right"><span class="chip">{{ p.total }}</span></td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty-state"><i class="fas fa-users"></i><br>Sem dados.</div>
+      {% endif %}
     </div>
   </div>
 
-  <div class="row mb-4">
-
-    <!-- Top Players -->
-    <div class="col-md-5 mb-4">
-      <div class="card-dark h-100">
-        <div class="section-title"><i class="fas fa-trophy mr-2"></i>Top Players</div>
-        {% if top_players %}
-        <table class="table table-borderless mb-0">
-          <thead>
-            <tr>
-              <th>#</th>
-              <th>Player</th>
-              <th>Pontos</th>
-              <th>Etapas</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for p in top_players %}
-            <tr>
-              <td>
-                {% if forloop.counter == 1 %}<span class="rank-medal-1"><i class="fas fa-medal"></i></span>
-                {% elif forloop.counter == 2 %}<span class="rank-medal-2"><i class="fas fa-medal"></i></span>
-                {% elif forloop.counter == 3 %}<span class="rank-medal-3"><i class="fas fa-medal"></i></span>
-                {% else %}<span style="color:#aaa">{{ forloop.counter }}</span>
-                {% endif %}
-              </td>
-              <td>{{ p.id_player__player }}</td>
-              <td><strong style="color:#c9a84c">{{ p.total_pontos }}</strong></td>
-              <td><span class="chip">{{ p.participacoes }}</span></td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-        {% else %}
-        <p class="text-muted">Nenhum dado de ranking ainda.</p>
-        {% endif %}
-      </div>
-    </div>
-
-    <!-- Últimas Etapas -->
-    <div class="col-md-7 mb-4">
-      <div class="card-dark h-100">
-        <div class="section-title"><i class="fas fa-calendar-alt mr-2"></i>Últimas Etapas</div>
-        {% if ultimas_etapas %}
-        <table class="table table-borderless mb-0">
-          <thead>
-            <tr>
-              <th>Etapa</th>
-              <th>Torneio</th>
-              <th>Local</th>
-              <th>Data</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for e in ultimas_etapas %}
-            <tr>
-              <td>{{ e.etapa }}</td>
-              <td>{{ e.id_torneio.torneio }}</td>
-              <td>{{ e.local }}</td>
-              <td>{{ e.data|date:"d-m-Y" }}</td>
-              <td>
-                {% if e.status == 'A' %}<span class="badge-status-A">Aberta</span>
-                {% elif e.status == 'F' %}<span class="badge-status-F">Finalizada</span>
-                {% else %}<span class="badge-status-I">Inativa</span>
-                {% endif %}
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
-        {% else %}
-        <p class="text-muted">Nenhuma etapa cadastrada.</p>
-        {% endif %}
-      </div>
-    </div>
-
-  </div>
-
-  <!-- Torneios -->
-  <div class="row mb-4">
-    <div class="col-12">
-      <div class="card-dark">
-        <div class="section-title"><i class="fas fa-list mr-2"></i>Torneios</div>
-        {% if torneios %}
-        <div class="table-responsive">
-          <table class="table table-borderless mb-0">
-            <thead>
-              <tr>
-                <th>Torneio</th>
-                <th>Etapas</th>
-                <th>Players</th>
-                <th>Buy-in</th>
-                <th>Rebuy</th>
-                <th>Jackpot</th>
-                <th>Tx. Adm</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for t in torneios %}
-              <tr>
-                <td><strong>{{ t.torneio }}</strong></td>
-                <td><span class="chip">{{ t.num_etapas }} / {{ t.qtd_etapas }}</span></td>
-                <td><span class="chip">{{ t.num_players }}</span></td>
-                <td>R$ {{ t.vlr_buyinn }}</td>
-                <td>R$ {{ t.vlr_rebuy }}</td>
-                <td style="color:#c9a84c">R$ {{ t.vlr_jackpot }}</td>
-                <td>R$ {{ t.vlr_txadm }}</td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        {% else %}
-        <p class="text-muted">Nenhum torneio cadastrado.</p>
-        {% endif %}
-      </div>
+  <!-- Top Classificações -->
+  <div class="col-md-4 mb-4">
+    <div class="card-dark h-100">
+      <div class="section-title"><i class="fas fa-trophy mr-2"></i>Top Classificações</div>
+      {% if top_classificacoes %}
+      <table class="table table-borderless mb-0" style="font-size:0.85rem">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Player</th>
+            <th class="text-center" style="color:#FFD700" title="1º lugares"><i class="fas fa-trophy"></i></th>
+            <th class="text-center" style="color:#C0C0C0" title="2º lugares"><i class="fas fa-trophy"></i></th>
+            <th class="text-center" style="color:#CD7F32" title="3º lugares"><i class="fas fa-trophy"></i></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for p in top_classificacoes %}
+          <tr>
+            <td>
+              {% if forloop.counter == 1 %}<i class="fas fa-medal" style="color:#FFD700"></i>
+              {% elif forloop.counter == 2 %}<i class="fas fa-medal" style="color:#C0C0C0"></i>
+              {% elif forloop.counter == 3 %}<i class="fas fa-medal" style="color:#CD7F32"></i>
+              {% else %}<span style="color:#aaa">{{ forloop.counter }}</span>{% endif %}
+            </td>
+            <td>{{ p.id_player__player }}</td>
+            <td class="text-center" style="color:#FFD700;font-weight:bold">{{ p.primeiros }}</td>
+            <td class="text-center" style="color:#C0C0C0;font-weight:bold">{{ p.segundos }}</td>
+            <td class="text-center" style="color:#CD7F32;font-weight:bold">{{ p.terceiros }}</td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty-state"><i class="fas fa-trophy"></i><br>Sem dados.</div>
+      {% endif %}
     </div>
   </div>
 
-  <!-- Jackpot por torneio -->
-  <div class="row">
-    <div class="col-12">
-      <div class="card-dark">
-        <div class="section-title"><i class="fas fa-coins mr-2"></i>Movimentação por Torneio</div>
-        {% if jackpots %}
-        <div class="table-responsive">
-          <table class="table table-borderless mb-0">
-            <thead>
-              <tr>
-                <th>Torneio</th>
-                <th>Total Buy-ins</th>
-                <th>Total Rebuys</th>
-                <th>Total Entradas</th>
-              </tr>
-            </thead>
-            <tbody>
-              {% for j in jackpots %}
-              <tr>
-                <td><strong>{{ j.id_torneio__torneio }}</strong></td>
-                <td>{{ j.total_entradas }}</td>
-                <td>{{ j.total_rebuys }}</td>
-                <td><strong style="color:#c9a84c">{{ j.total_entradas|add:j.total_rebuys }}</strong></td>
-              </tr>
-              {% endfor %}
-            </tbody>
-          </table>
-        </div>
-        {% else %}
-        <p class="text-muted">Nenhuma movimentação registrada.</p>
-        {% endif %}
-      </div>
+  <!-- Top Resultado Financeiro -->
+  <div class="col-md-4 mb-4">
+    <div class="card-dark h-100">
+      <div class="section-title"><i class="fas fa-dollar-sign mr-2"></i>Top Resultado (R$)</div>
+      <div style="font-size:0.72rem;color:#aaa;margin-bottom:8px">Prêmios recebidos − (buy-ins + rebuys)</div>
+      {% if top_resultado %}
+      <table class="table table-borderless mb-0" style="font-size:0.85rem">
+        <thead><tr><th>#</th><th>Player</th><th class="text-right">Resultado</th></tr></thead>
+        <tbody>
+          {% for p in top_resultado %}
+          <tr>
+            <td>
+              {% if forloop.counter == 1 %}<i class="fas fa-medal" style="color:#FFD700"></i>
+              {% elif forloop.counter == 2 %}<i class="fas fa-medal" style="color:#C0C0C0"></i>
+              {% elif forloop.counter == 3 %}<i class="fas fa-medal" style="color:#CD7F32"></i>
+              {% else %}<span style="color:#aaa">{{ forloop.counter }}</span>{% endif %}
+            </td>
+            <td>{{ p.player }}</td>
+            <td class="text-right" style="font-weight:bold;{% if p.resultado >= 0 %}color:#28a745{% else %}color:#c94848{% endif %}">
+              {% if p.resultado >= 0 %}+{% endif %}R$ {{ p.resultado|floatformat:0 }}
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+      {% else %}
+      <div class="empty-state"><i class="fas fa-dollar-sign"></i><br>Sem dados.</div>
+      {% endif %}
     </div>
   </div>
 
 </div>
-
-<script src="https://code.jquery.com/jquery-3.2.1.slim.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.12.9/umd/popper.min.js"></script>
-<script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.0.0/js/bootstrap.min.js"></script>
-</body>
-</html>
+{% endblock %}

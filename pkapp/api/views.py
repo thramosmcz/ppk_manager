@@ -1,5 +1,6 @@
 from django.shortcuts import get_object_or_404
 from django.db.models import Sum
+from django.db import models
 from rest_framework import viewsets, status
 from rest_framework.decorators import action, api_view
 from rest_framework.response import Response
@@ -97,6 +98,8 @@ class EtapaViewSet(viewsets.ViewSet):
             r = Ranking(id_etapa=etapa, id_torneio=etapa.id_torneio, id_player=Players.objects.get(pk=id),
                         buy_inn=1, qtd_rebuy=0, posicao=0, pontuacao=0, premio=0)
             r.save()
+            # incrementa participações do player
+            Players.objects.filter(pk=id).update(participacoes=models.F('participacoes') + 1)
 
         qset_ranking = Ranking.objects.filter(id_etapa=etapa.id, id_player__in=body_players_ids)
         serializer = RankingSerializer(qset_ranking, many=True)
