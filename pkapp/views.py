@@ -217,6 +217,59 @@ def pkapp_etapas(request):
     })
 
 
+@permission_required('can_view_etapas')
+def ranking_etapa(request, id):
+    etapa   = get_object_or_404(Etapas.objects.select_related('id_torneio'), id=id)
+    torneio = etapa.id_torneio
+
+    if request.method == 'POST' and request.user.is_superuser:
+        # Salva edições linha a linha
+        for key, val in request.POST.items():
+            if key.startswith('posicao_'):
+                rid = key.split('_')[1]
+                try:
+                    r = Ranking.objects.get(id=rid, id_etapa=etapa)
+                    r.posicao   = int(request.POST.get(f'posicao_{rid}', r.posicao) or 0)
+                    r.pontuacao = int(request.POST.get(f'pontuacao_{rid}', r.pontuacao) or 0)
+                    premio_raw  = request.POST.get(f'premio_{rid}', str(r.premio)) or '0'
+                    r.premio    = float(premio_raw.replace(',', '.'))
+                    r.save()
+                except (Ranking.DoesNotExist, ValueError):
+                    pass
+        messages.success(request, 'Ranking da etapa atualizado.')
+        return redirect('ranking_etapa', id=id)
+
+    inscritos = (
+        Ranking.objects
+        .filter(id_etapa=etapa)
+        .select_related('id_player')
+        .order_by('posicao', 'id_player__player')
+    )
+
+    # Financeiro
+    from django.db.models import Sum as _Sum
+    total_buyins = inscritos.count()
+    total_rebuys = inscritos.aggregate(t=_Sum('qtd_rebuy'))['t'] or 0
+    vlr_buyinn  = float(torneio.vlr_buyinn)
+    vlr_rebuy   = float(torneio.vlr_rebuy)
+    vlr_txadm   = float(torneio.vlr_txadm)
+    vlr_jackpot = float(torneio.vlr_jackpot)
+    arrecadado  = total_buyins * vlr_buyinn + total_rebuys * vlr_rebuy
+    jackpot     = (total_buyins + total_rebuys) * vlr_jackpot
+    txadm       = total_buyins * vlr_txadm
+    prizepool   = arrecadado - jackpot - txadm
+
+    return render(request, 'pkapp/ranking_etapa.html', {
+        'etapa':      etapa,
+        'torneio':    torneio,
+        'inscritos':  inscritos,
+        'prizepool':  prizepool,
+        'payout_1':   round(prizepool * 0.50, 2),
+        'payout_2':   round(prizepool * 0.30, 2),
+        'payout_3':   round(prizepool * 0.20, 2),
+    })
+
+
 @permission_required('can_edit_etapas')
 def etapa_create(request):
     torneio_id = request.POST.get('torneio_filtro') or request.GET.get('torneio')

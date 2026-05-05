@@ -1,0 +1,145 @@
+{% extends 'pkapp/_base_dark.html' %}
+{% block title %}Ranking - {{ etapa.etapa }}{% endblock %}
+{% block nav_etapas %}active{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-between align-items-center">
+  <div class="page-title"><i class="fas fa-list-ol mr-2"></i>Ranking da Etapa</div>
+  <div>
+    {% if request.user.is_superuser %}
+    <button class="btn btn-gold btn-sm mr-2" id="btnEditar">
+      <i class="fas fa-edit mr-1"></i> Editar
+    </button>
+    {% endif %}
+    <a href="/pkapp/admetapa/{{ etapa.id }}/" class="btn btn-sm mr-2" style="background:#0f3460;color:#c9a84c;border:1px solid #c9a84c44">
+      <i class="fas fa-cogs mr-1"></i> Adm Etapa
+    </a>
+    <a href="/pkapp/etapas?torneio={{ torneio.id }}" class="btn btn-sm" style="background:#0f3460;color:#aaa;border:1px solid #ffffff22">
+      <i class="fas fa-arrow-left mr-1"></i> Voltar
+    </a>
+  </div>
+</div>
+
+<!-- Cabeçalho -->
+<div class="card-dark mb-4">
+  <div class="row align-items-center">
+    <div class="col-md-6">
+      <div style="font-size:1.1rem;font-weight:bold;color:#c9a84c">{{ etapa.etapa }}</div>
+      <div style="color:#aaa;font-size:0.85rem">{{ torneio.torneio }} &mdash; {{ etapa.local }} &mdash; {{ etapa.data|date:"d-m-Y" }}</div>
+    </div>
+    <div class="col-md-6 text-right" style="font-size:0.85rem">
+      <span style="color:#aaa">Prize Pool:</span>
+      <strong style="color:#28a745;font-size:1rem"> R$ {{ prizepool|floatformat:2 }}</strong>
+      &nbsp;&nbsp;
+      <span style="color:#FFD700"><i class="fas fa-trophy"></i> R$ {{ payout_1|floatformat:2 }}</span>
+      &nbsp;
+      <span style="color:#C0C0C0"><i class="fas fa-trophy"></i> R$ {{ payout_2|floatformat:2 }}</span>
+      &nbsp;
+      <span style="color:#CD7F32"><i class="fas fa-trophy"></i> R$ {{ payout_3|floatformat:2 }}</span>
+    </div>
+  </div>
+</div>
+
+<!-- Tabela -->
+<div class="card-dark">
+  {% if inscritos %}
+  <form method="POST" id="formRanking">
+    {% csrf_token %}
+    <div class="table-responsive">
+      <table class="table table-borderless mb-0" style="font-size:0.88rem">
+        <thead>
+          <tr>
+            <th style="width:40px">#</th>
+            <th>Player</th>
+            <th class="text-center">Buy-in</th>
+            <th class="text-center">Rebuys</th>
+            <th class="text-center" id="th-posicao">Posição</th>
+            <th class="text-center" id="th-pontuacao">Pontuação</th>
+            <th class="text-center" id="th-premio">Prêmio</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for r in inscritos %}
+          <tr>
+            <td style="color:#c9a84c;font-weight:bold">
+              {% if r.posicao == 1 %}<i class="fas fa-trophy" style="color:#FFD700"></i>
+              {% elif r.posicao == 2 %}<i class="fas fa-trophy" style="color:#C0C0C0"></i>
+              {% elif r.posicao == 3 %}<i class="fas fa-trophy" style="color:#CD7F32"></i>
+              {% elif r.posicao > 0 %}{{ r.posicao }}
+              {% else %}—{% endif %}
+            </td>
+            <td><strong>{{ r.id_player.player }}</strong></td>
+            <td class="text-center">{{ r.buy_inn }}</td>
+            <td class="text-center">{{ r.qtd_rebuy }}</td>
+
+            <!-- Posição -->
+            <td class="text-center">
+              <span class="view-mode" style="color:#c9a84c;font-weight:bold">
+                {% if r.posicao > 0 %}{{ r.posicao }}º{% else %}—{% endif %}
+              </span>
+              <input type="number" name="posicao_{{ r.id }}" value="{{ r.posicao }}"
+                     class="edit-mode form-control form-control-sm text-center d-none"
+                     style="width:70px;margin:auto" min="0">
+            </td>
+
+            <!-- Pontuação -->
+            <td class="text-center">
+              <span class="view-mode" style="{% if r.pontuacao > 0 %}color:#c9a84c;font-weight:bold{% else %}color:#555{% endif %}">
+                {% if r.pontuacao > 0 %}{{ r.pontuacao }}{% else %}—{% endif %}
+              </span>
+              <input type="number" name="pontuacao_{{ r.id }}" value="{{ r.pontuacao }}"
+                     class="edit-mode form-control form-control-sm text-center d-none"
+                     style="width:80px;margin:auto" min="0">
+            </td>
+
+            <!-- Prêmio -->
+            <td class="text-center">
+              <span class="view-mode" style="{% if r.premio > 0 %}color:#28a745;font-weight:bold{% else %}color:#555{% endif %}">
+                {% if r.premio > 0 %}R$ {{ r.premio|floatformat:2 }}{% else %}—{% endif %}
+              </span>
+              <input type="text" name="premio_{{ r.id }}" value="{{ r.premio|floatformat:2 }}"
+                     class="edit-mode form-control form-control-sm text-center d-none"
+                     style="width:100px;margin:auto">
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+
+    {% if request.user.is_superuser %}
+    <div class="edit-mode d-none mt-3 text-right">
+      <button type="button" class="btn btn-secondary btn-sm mr-2" id="btnCancelar">Cancelar</button>
+      <button type="submit" class="btn btn-gold btn-sm"><i class="fas fa-save mr-1"></i> Salvar Alterações</button>
+    </div>
+    {% endif %}
+  </form>
+  {% else %}
+  <div class="empty-state">
+    <i class="fas fa-users"></i>
+    <p>Nenhum player inscrito nesta etapa.</p>
+  </div>
+  {% endif %}
+</div>
+{% endblock %}
+
+{% block extra_js %}
+{% if request.user.is_superuser %}
+<script>
+  const btnEditar   = document.getElementById('btnEditar');
+  const btnCancelar = document.getElementById('btnCancelar');
+
+  btnEditar.addEventListener('click', function() {
+    document.querySelectorAll('.view-mode').forEach(el => el.classList.add('d-none'));
+    document.querySelectorAll('.edit-mode').forEach(el => el.classList.remove('d-none'));
+    btnEditar.classList.add('d-none');
+  });
+
+  btnCancelar.addEventListener('click', function() {
+    document.querySelectorAll('.view-mode').forEach(el => el.classList.remove('d-none'));
+    document.querySelectorAll('.edit-mode').forEach(el => el.classList.add('d-none'));
+    btnEditar.classList.remove('d-none');
+  });
+</script>
+{% endif %}
+{% endblock %}
