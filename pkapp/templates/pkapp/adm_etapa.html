@@ -256,7 +256,15 @@ function apiPost(url, data) {
     credentials: 'same-origin',
     headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken')},
     body: JSON.stringify(data)
-  }).then(r => r.json());
+  }).then(function(r) {
+    if (!r.ok) {
+      return r.text().then(function(txt) {
+        console.error('API erro ' + r.status + ':', txt.substring(0, 300));
+        throw new Error('HTTP ' + r.status);
+      });
+    }
+    return r.json();
+  });
 }
 
 function fmt(v) {
