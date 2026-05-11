@@ -265,13 +265,13 @@ function recalcularFinanceiro() {
   let qtdBuyInn = 0, qtdRebuy = 0;
   document.querySelectorAll('#lista-inscritos [data-ranking-id]').forEach(function(card) {
     qtdBuyInn += 1;
-    qtdRebuy  += parseInt(card.querySelector('.td-rebuy').textContent) || 0;
+    qtdRebuy  += parseInt(card.dataset.rebuy) || 0;
   });
-  const txAdm     = qtdBuyInn * VLR_TXADM;
-  const arrecadado = (qtdBuyInn * VLR_BUYINN) + (qtdRebuy * VLR_REBUY) + txAdm;
-  const jackpot   = (qtdBuyInn + qtdRebuy) * VLR_JACKPOT;
-  const prizePool = arrecadado - txAdm - jackpot;
-  document.getElementById('ind-arrecadado').textContent = fmt(arrecadado);
+  const txAdm      = qtdBuyInn * VLR_TXADM;
+  const arrecadado = (qtdBuyInn * VLR_BUYINN) + (qtdRebuy * VLR_REBUY);
+  const jackpot    = (qtdBuyInn + qtdRebuy) * VLR_JACKPOT;
+  const prizePool  = arrecadado - txAdm - jackpot;
+  document.getElementById('ind-arrecadado').textContent = fmt(arrecadado + txAdm);
   document.getElementById('ind-jackpot').textContent    = fmt(jackpot);
   document.getElementById('ind-prizepool').textContent  = fmt(prizePool);
 }
