@@ -66,3 +66,8 @@ $RECYCLE.BIN/
 pkapp/__init__.pyc
 pkapp/models.pyc
 deploy_aws_ec2.txt
+
+# ── Configurações de ambiente (nunca commitar) ────────────────────────────────
+.env
+.env.*
+!.env.example

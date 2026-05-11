@@ -150,9 +150,10 @@ class EtapaViewSet(viewsets.ViewSet):
             inscritos    = Ranking.objects.filter(id_etapa=etapa)
             total_buyins = inscritos.count()
             total_rebuys = inscritos.aggregate(t=Sum('qtd_rebuy'))['t'] or 0
-            arrecadado   = total_buyins * float(torneio.vlr_buyinn) + total_rebuys * float(torneio.vlr_rebuy)
-            jackpot      = (total_buyins + total_rebuys) * float(torneio.vlr_jackpot)
             txadm        = total_buyins * float(torneio.vlr_txadm)
+            # Arrecadado = (buyins × vlr_buyinn) + (rebuys × vlr_rebuy) + (buyins × vlr_txadm)
+            arrecadado   = total_buyins * float(torneio.vlr_buyinn) + total_rebuys * float(torneio.vlr_rebuy) + txadm
+            jackpot      = (total_buyins + total_rebuys) * float(torneio.vlr_jackpot)
             prizepool    = arrecadado - jackpot - txadm
             ranking.premio = round(prizepool * {1: 0.50, 2: 0.30, 3: 0.20}[posicao], 2)
 

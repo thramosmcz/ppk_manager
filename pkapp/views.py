@@ -291,9 +291,10 @@ def ranking_etapa(request, id):
     vlr_rebuy   = float(torneio.vlr_rebuy)
     vlr_txadm   = float(torneio.vlr_txadm)
     vlr_jackpot = float(torneio.vlr_jackpot)
-    arrecadado  = total_buyins * vlr_buyinn + total_rebuys * vlr_rebuy
-    jackpot     = (total_buyins + total_rebuys) * vlr_jackpot
     txadm       = total_buyins * vlr_txadm
+    # Arrecadado = (buyins × vlr_buyinn) + (rebuys × vlr_rebuy) + (buyins × vlr_txadm)
+    arrecadado  = total_buyins * vlr_buyinn + total_rebuys * vlr_rebuy + txadm
+    jackpot     = (total_buyins + total_rebuys) * vlr_jackpot
     prizepool   = arrecadado - jackpot - txadm
 
     return render(request, 'pkapp/ranking_etapa.html', {
@@ -402,7 +403,7 @@ def _calcular_ranking_com_descarte(torneio):
     vlr_jackpot = float(torneio.vlr_jackpot)
     vlr_txadm   = float(torneio.vlr_txadm)
 
-    acumulado = (total_buy_inn + total_rebuy) * vlr_buyinn + total_buy_inn * vlr_txadm
+    acumulado = (total_buy_inn * vlr_buyinn) + (total_rebuy * vlr_rebuy) + (total_buy_inn * vlr_txadm)
     jackpot   = (total_buy_inn + total_rebuy) * vlr_jackpot
     taxa_adm  = total_buy_inn * vlr_txadm
 
