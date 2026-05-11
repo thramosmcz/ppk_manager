@@ -268,10 +268,10 @@ function recalcularFinanceiro() {
     qtdRebuy  += parseInt(card.dataset.rebuy) || 0;
   });
   const txAdm      = qtdBuyInn * VLR_TXADM;
-  const arrecadado = (qtdBuyInn * VLR_BUYINN) + (qtdRebuy * VLR_REBUY);
+  const arrecadado = (qtdBuyInn * VLR_BUYINN) + (qtdRebuy * VLR_REBUY) + txAdm;
   const jackpot    = (qtdBuyInn + qtdRebuy) * VLR_JACKPOT;
   const prizePool  = arrecadado - txAdm - jackpot;
-  document.getElementById('ind-arrecadado').textContent = fmt(arrecadado + txAdm);
+  document.getElementById('ind-arrecadado').textContent = fmt(arrecadado);
   document.getElementById('ind-jackpot').textContent    = fmt(jackpot);
   document.getElementById('ind-prizepool').textContent  = fmt(prizePool);
 }
