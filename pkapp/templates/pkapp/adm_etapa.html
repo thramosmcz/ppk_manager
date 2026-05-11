@@ -214,12 +214,8 @@
         <button type="button" class="close" data-dismiss="modal" style="color:#e0e0e0">&times;</button>
       </div>
       <div class="modal-body">
-        <p style="font-size:0.9rem">Eliminar <strong id="eliminar-nome"></strong>?</p>
-        <label style="font-size:0.85rem;color:#aaa">Posição de eliminação:</label>
-        <input type="number" id="eliminar-posicao" class="form-control form-control-sm" min="1" placeholder="Ex: 5">
-        <div style="font-size:0.75rem;color:#aaa;margin-top:6px">
-          Pontuação: 1º=95 | 2º=80 | 3º=70 | 4º=60 | 5º=50 | 6º=40 | 7º=30 | 8º=20 | 9º=10 | 10º+=0
-        </div>
+        <p style="font-size:0.9rem">Confirma a eliminação de <strong id="eliminar-nome"></strong>?</p>
+        <p style="font-size:0.85rem;color:#aaa">Posição será atribuída automaticamente: <strong id="eliminar-posicao-preview" style="color:#c9a84c"></strong></p>
       </div>
       <div class="modal-footer" style="border-top:1px solid #c9484855">
         <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
@@ -417,14 +413,16 @@ document.addEventListener('click', function(e) {
   currentEliminarPlayerId = parseInt(btn.dataset.playerId);
   currentEliminarRankingId = btn.dataset.rankingId;
   document.getElementById('eliminar-nome').textContent = btn.dataset.playerNome;
-  document.getElementById('eliminar-posicao').value = '';
+  // Posição = número de players ainda ativos (posicao == 0)
+  const ativos = document.querySelectorAll('#tbody-inscritos tr[data-ranking-id][data-posicao="0"]').length;
+  document.getElementById('eliminar-posicao-preview').textContent = ativos + 'º lugar';
   $('#modalEliminar').modal('show');
 });
 
 // Eliminar - confirmar
 document.getElementById('btnConfirmarEliminar').addEventListener('click', function() {
-  const posicao = parseInt(document.getElementById('eliminar-posicao').value);
-  if (!posicao || posicao < 1) { alert('Informe uma posição válida.'); return; }
+  const ativos = document.querySelectorAll('#tbody-inscritos tr[data-ranking-id][data-posicao="0"]').length;
+  const posicao = ativos;
 
   apiPost('/pkapp/api/etapas/' + ETAPA_ID + '/eliminar/', {
     player_id: currentEliminarPlayerId,
@@ -433,6 +431,7 @@ document.getElementById('btnConfirmarEliminar').addEventListener('click', functi
     if (data.error) { alert(data.error); return; }
     $('#modalEliminar').modal('hide');
     const row = document.getElementById('row-' + currentEliminarRankingId);
+    row.dataset.posicao = posicao;
     const pts = data.pontuacao > 0 ? '<span style="color:#c9a84c;font-weight:bold">' + data.pontuacao + '</span>' : '—';
     row.querySelector('.td-posicao').innerHTML = '<span style="color:#c9a84c;font-weight:bold">' + data.posicao + 'º</span>';
     row.querySelector('.td-pontuacao').innerHTML = pts;
@@ -440,16 +439,13 @@ document.getElementById('btnConfirmarEliminar').addEventListener('click', functi
     tdAcoes.innerHTML = '<span style="color:#6c757d;font-size:0.8rem"><i class="fas fa-check-circle mr-1"></i>Eliminado</span>';
 
     if (data.etapa_finalizada) {
-      document.getElementById('badge-status').innerHTML =
-        '<span class="badge-status-F">Finalizada</span>';
-      // Remove painel de inscrição
+      document.getElementById('badge-status').innerHTML = '<span class="badge-status-F">Finalizada</span>';
       const formInsc = document.getElementById('form-inscricao');
       if (formInsc) formInsc.style.display = 'none';
-      // Remove coluna Ações do cabeçalho
       const thAcoes = document.querySelector('#tbody-inscritos').closest('table').querySelector('thead tr th:last-child');
       if (thAcoes) thAcoes.remove();
     }
-  });
+  }).catch(err => { alert('Erro: ' + err); });
 });
 {% endif %}
 </script>

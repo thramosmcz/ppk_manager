@@ -133,12 +133,14 @@ class EtapaViewSet(viewsets.ViewSet):
         player_id = request.data.get('player_id')
         posicao   = request.data.get('posicao')
 
-        if not posicao or posicao < 1:
-            return Response({'error': 'Posição inválida.'}, status=status.HTTP_400_BAD_REQUEST)
-
         ranking = get_object_or_404(Ranking, id_etapa=etapa, id_player_id=player_id)
         if ranking.posicao != 0:
             return Response({'error': 'Player já foi eliminado.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Posição = número de players ainda ativos no banco (fonte da verdade)
+        posicao = Ranking.objects.filter(id_etapa=etapa, posicao=0).count()
+        if posicao < 1:
+            posicao = 1
 
         ranking.posicao   = posicao
         ranking.pontuacao = PONTUACAO_POR_POSICAO.get(posicao, 0)
