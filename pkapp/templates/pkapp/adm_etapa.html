@@ -293,10 +293,10 @@
 const ETAPA_ID    = {{ etapa.id }};
 const MAX_PLAYERS = {{ max_players }};
 const MAX_REBUY   = {{ max_rebuy }};
-const VLR_BUYINN  = parseFloat("{{ torneio.vlr_buyinn|stringformat:'f' }}");
-const VLR_REBUY   = parseFloat("{{ torneio.vlr_rebuy|stringformat:'f' }}");
-const VLR_TXADM   = parseFloat("{{ torneio.vlr_txadm|stringformat:'f' }}");
-const VLR_JACKPOT = parseFloat("{{ torneio.vlr_jackpot|stringformat:'f' }}");
+const VLR_BUYINN  = parseFloat("{{ torneio.vlr_buyinn }}".replace(',', '.'));
+const VLR_REBUY   = parseFloat("{{ torneio.vlr_rebuy }}".replace(',', '.'));
+const VLR_TXADM   = parseFloat("{{ torneio.vlr_txadm }}".replace(',', '.'));
+const VLR_JACKPOT = parseFloat("{{ torneio.vlr_jackpot }}".replace(',', '.'));
 let currentEliminarPlayerId  = null;
 let currentEliminarRankingId = null;
 
@@ -332,14 +332,16 @@ function recalcularFinanceiro() {
     qtdBuyInn += 1;
     qtdRebuy  += parseInt(card.querySelector('.td-rebuy').textContent) || 0;
   });
-  const txAdm     = qtdBuyInn * VLR_TXADM;
+  const txAdm      = qtdBuyInn * VLR_TXADM;
   const arrecadado = (qtdBuyInn * VLR_BUYINN) + (qtdRebuy * VLR_REBUY) + txAdm;
-  const jackpot   = (qtdBuyInn + qtdRebuy) * VLR_JACKPOT;
-  const prizePool = arrecadado - txAdm - jackpot;
+  const jackpot    = (qtdBuyInn + qtdRebuy) * VLR_JACKPOT;
+  const prizePool  = arrecadado - txAdm - jackpot;
   document.getElementById('ind-arrecadado').textContent = fmt(arrecadado);
   document.getElementById('ind-jackpot').textContent    = fmt(jackpot);
   document.getElementById('ind-txadm').textContent      = fmt(txAdm);
   document.getElementById('ind-prizepool').textContent  = fmt(prizePool);
+  // atualiza contador de inscritos
+  document.getElementById('qtd-inscritos').textContent  = qtdBuyInn;
 }
 recalcularFinanceiro();
 
