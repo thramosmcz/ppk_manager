@@ -253,6 +253,7 @@ function getCookie(name) {
 function apiPost(url, data) {
   return fetch(url, {
     method: 'POST',
+    credentials: 'same-origin',
     headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken')},
     body: JSON.stringify(data)
   }).then(r => r.json());
@@ -370,9 +371,11 @@ document.getElementById('btnInscrever').addEventListener('click', function() {
 
   apiPost('/pkapp/api/etapas/' + ETAPA_ID + '/inscrito/', selecionados.map(id => ({id})))
     .then(data => {
-      if (data.error) { alert(data.error); return; }
+      if (data.error) { alert('Erro: ' + data.error); return; }
+      if (data.detail) { alert('Erro de autenticação: ' + data.detail); return; }
       location.reload();
-    });
+    })
+    .catch(err => { alert('Erro na requisição: ' + err); });
 });
 
 // Rebuy

@@ -48,7 +48,6 @@ urlpatterns = [
     re_path(r'usuarios/(?P<id>\d+)/toggle/',   views.user_toggle_active,  name='user_toggle_active'),
 
     # API
-    path('api/', include('rest_framework.urls', namespace='rest_framework')),
     path('api/', include('pkapp.api.urls')),
 
     path('', views.pkapp_react, name='pkapp_react'),
