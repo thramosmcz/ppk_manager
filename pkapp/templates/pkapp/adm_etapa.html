@@ -3,205 +3,199 @@
 {% block nav_etapas %}active{% endblock %}
 
 {% block content %}
-<div class="d-flex justify-content-between align-items-center">
-  <div class="page-title"><i class="fas fa-cogs mr-2"></i>Administrar Etapa</div>
-  <div>
-    <a href="/pkapp/clock/{{ etapa.id }}/" target="_blank" class="btn btn-sm btn-gold mr-2">
-      <i class="fas fa-clock mr-1"></i> Poker Clock
+<style>
+  /* ── Mobile tweaks ─────────────────────────────────────── */
+  .adm-header-title { font-size:1rem; font-weight:bold; color:#c9a84c; }
+  .adm-header-sub   { font-size:0.78rem; color:#aaa; }
+  .fin-label { font-size:0.65rem; color:#aaa; text-transform:uppercase; letter-spacing:1px; }
+  .fin-value { font-size:0.95rem; font-weight:bold; }
+
+  /* Cards de player */
+  .player-card {
+    background:#0f3460;
+    border:1px solid #c9a84c22;
+    border-radius:10px;
+    padding:10px 12px;
+    margin-bottom:8px;
+  }
+  .player-card.eliminado { opacity:0.5; border-color:#ffffff11; }
+  .player-card .pname { font-weight:bold; font-size:0.95rem; }
+  .player-card .pinfo { font-size:0.78rem; color:#aaa; }
+  .player-card .ppos  { font-size:0.85rem; color:#c9a84c; font-weight:bold; }
+
+  /* Botões de ação grandes para toque */
+  .btn-touch {
+    padding:10px 16px;
+    font-size:0.85rem;
+    border-radius:8px;
+    min-width:80px;
+  }
+
+  /* Lista de inscrição */
+  .player-item:active { background:#0f3460 !important; }
+
+  @media (max-width: 576px) {
+    .page-title { font-size:1.1rem; margin:16px 0 12px; }
+    .card-dark  { padding:14px; }
+    .fin-value  { font-size:0.88rem; }
+  }
+</style>
+
+<!-- Topo: título + botões de navegação -->
+<div class="d-flex justify-content-between align-items-center flex-wrap" style="gap:8px">
+  <div class="page-title mb-0"><i class="fas fa-cogs mr-1"></i>Adm Etapa</div>
+  <div class="d-flex" style="gap:6px">
+    <a href="/pkapp/clock/{{ etapa.id }}/" target="_blank" class="btn btn-sm btn-gold">
+      <i class="fas fa-clock mr-1"></i><span class="d-none d-sm-inline">Poker Clock</span><span class="d-sm-none">Clock</span>
     </a>
     <a href="/pkapp/etapas?torneio={{ torneio.id }}" class="btn btn-sm" style="background:#0f3460;color:#c9a84c;border:1px solid #c9a84c44">
-      <i class="fas fa-arrow-left mr-1"></i> Voltar
+      <i class="fas fa-arrow-left"></i>
     </a>
   </div>
 </div>
 
 <!-- Cabeçalho da etapa -->
-<div class="card-dark mb-4">
-  <div class="row align-items-center">
-    <div class="col-md-6">
-      <div style="font-size:1.1rem;font-weight:bold;color:#c9a84c">{{ etapa.etapa }}</div>
-      <div style="color:#aaa;font-size:0.85rem">{{ torneio.torneio }} &mdash; {{ etapa.local }} &mdash; {{ etapa.data|date:"d-m-Y" }}</div>
+<div class="card-dark mb-3">
+  <!-- Nome + status + ações numa linha -->
+  <div class="d-flex justify-content-between align-items-start flex-wrap" style="gap:8px;margin-bottom:10px">
+    <div>
+      <div class="adm-header-title">{{ etapa.etapa }}</div>
+      <div class="adm-header-sub">{{ torneio.torneio }} &mdash; {{ etapa.local }} &mdash; {{ etapa.data|date:"d-m-Y" }}</div>
     </div>
-    <div class="col-md-3 text-center">
-      <div style="font-size:0.75rem;color:#aaa;text-transform:uppercase;letter-spacing:1px">Status</div>
+    <div class="d-flex align-items-center" style="gap:8px">
       <div id="badge-status">
         {% if etapa.status == 'A' %}<span class="badge-status-A"><i class="fas fa-circle mr-1" style="font-size:0.5rem"></i>Aberta</span>
         {% elif etapa.status == 'F' %}<span class="badge-status-F">Finalizada</span>
         {% else %}<span class="badge-status-I">Inativa</span>{% endif %}
       </div>
-    </div>
-    <div class="col-md-3 text-right">
       <div id="acoes-status">
         {% if etapa.status == 'I' %}
-        <button class="btn btn-gold btn-sm btn-status" data-novo="A">
-          <i class="fas fa-lock-open mr-1"></i> Abrir
-        </button>
+        <button class="btn btn-gold btn-sm btn-status" data-novo="A"><i class="fas fa-lock-open mr-1"></i>Abrir</button>
         {% elif etapa.status == 'A' %}
-        <button class="btn btn-sm btn-status mr-1" style="background:#c9a84c22;color:#c9a84c;border:1px solid #c9a84c55" data-novo="F">
-          <i class="fas fa-flag-checkered mr-1"></i> Finalizar
-        </button>
-        <button class="btn btn-sm btn-status" style="background:#6c757d22;color:#aaa;border:1px solid #6c757d55" data-novo="I">
-          <i class="fas fa-pause mr-1"></i> Inativar
-        </button>
+        <button class="btn btn-sm btn-status mr-1" style="background:#c9a84c22;color:#c9a84c;border:1px solid #c9a84c55" data-novo="F"><i class="fas fa-flag-checkered mr-1"></i>Finalizar</button>
+        <button class="btn btn-sm btn-status" style="background:#6c757d22;color:#aaa;border:1px solid #6c757d55" data-novo="I"><i class="fas fa-pause"></i></button>
         {% elif etapa.status == 'F' %}
-        <button class="btn btn-sm btn-status" style="background:#6c757d22;color:#aaa;border:1px solid #6c757d55" data-novo="I">
-          <i class="fas fa-undo mr-1"></i> Reabrir como Inativa
-        </button>
+        <button class="btn btn-sm btn-status" style="background:#6c757d22;color:#aaa;border:1px solid #6c757d55" data-novo="I"><i class="fas fa-undo mr-1"></i>Reabrir</button>
         {% endif %}
       </div>
     </div>
   </div>
-  <div class="row mt-3" style="font-size:0.85rem">
-    <div class="col-4 col-md-2 text-center">
-      <div style="color:#aaa">Buy-in</div>
-      <div style="color:#c9a84c;font-weight:bold">R$ {{ torneio.vlr_buyinn }}</div>
+
+  <!-- Financeiro: 4 colunas compactas -->
+  <div class="row no-gutters text-center" style="border-top:1px solid #c9a84c22;padding-top:10px">
+    <div class="col-3">
+      <div class="fin-label">Inscritos</div>
+      <div class="fin-value"><span id="qtd-inscritos">{{ total_inscritos }}</span>/{{ max_players }}</div>
     </div>
-    <div class="col-4 col-md-2 text-center">
-      <div style="color:#aaa">Tx. Adm</div>
-      <div style="font-weight:bold">R$ {{ torneio.vlr_txadm }}</div>
+    <div class="col-3">
+      <div class="fin-label">Arrecadado</div>
+      <div class="fin-value" id="ind-arrecadado">—</div>
     </div>
-    <div class="col-4 col-md-2 text-center">
-      <div style="color:#aaa">Rebuy</div>
-      <div style="font-weight:bold">R$ {{ torneio.vlr_rebuy }} (max {{ torneio.qtd_rebuy }}x)</div>
+    <div class="col-3">
+      <div class="fin-label">Jackpot</div>
+      <div class="fin-value" id="ind-jackpot" style="color:#c9a84c">—</div>
     </div>
-    <div class="col-6 col-md-2 text-center">
-      <div style="color:#aaa">Inscritos</div>
-      <div style="font-weight:bold">
-        <span id="qtd-inscritos">{{ total_inscritos }}</span> / {{ max_players }}
-      </div>
+    <div class="col-3">
+      <div class="fin-label">Prize Pool</div>
+      <div class="fin-value" id="ind-prizepool" style="color:#28a745">—</div>
     </div>
   </div>
-
-  <hr style="border-color:#c9a84c22;margin:12px 0">
-
-  <!-- Indicadores financeiros dinâmicos -->
-  <div class="row" style="font-size:0.85rem">
-    <div class="col-3 text-center">
-      <div style="color:#aaa;font-size:0.72rem;text-transform:uppercase;letter-spacing:1px">Total Arrecadado</div>
-      <div id="ind-arrecadado" style="font-size:1.1rem;font-weight:bold;color:#e0e0e0">R$ 0,00</div>
-    </div>
-    <div class="col-3 text-center">
-      <div style="color:#aaa;font-size:0.72rem;text-transform:uppercase;letter-spacing:1px">Jackpot</div>
-      <div id="ind-jackpot" style="font-size:1.1rem;font-weight:bold;color:#c9a84c">R$ 0,00</div>
-    </div>
-    <div class="col-3 text-center">
-      <div style="color:#aaa;font-size:0.72rem;text-transform:uppercase;letter-spacing:1px">Taxa Adm</div>
-      <div id="ind-txadm" style="font-size:1.1rem;font-weight:bold;color:#e0e0e0">R$ 0,00</div>
-    </div>
-    <div class="col-3 text-center">
-      <div style="color:#aaa;font-size:0.72rem;text-transform:uppercase;letter-spacing:1px">Prize Pool</div>
-      <div id="ind-prizepool" style="font-size:1.1rem;font-weight:bold;color:#28a745">R$ 0,00</div>
-    </div>
+  <!-- linha extra: buy-in / rebuy / txadm -->
+  <div class="row no-gutters text-center mt-2" style="font-size:0.75rem;color:#aaa">
+    <div class="col-4">Buy-in <strong style="color:#e0e0e0">R${{ torneio.vlr_buyinn }}</strong></div>
+    <div class="col-4">Rebuy <strong style="color:#e0e0e0">R${{ torneio.vlr_rebuy }} ({{ torneio.qtd_rebuy }}x)</strong></div>
+    <div class="col-4">Tx.Adm <strong style="color:#e0e0e0">R${{ torneio.vlr_txadm }}</strong></div>
   </div>
 </div>
 
-<div class="row">
-  <!-- Coluna esquerda: inscrever players -->
-  <div class="col-md-4 mb-4">
-    <div class="card-dark h-100">
-      <div class="section-title"><i class="fas fa-user-plus mr-1"></i> Inscrever Players</div>
-      {% if etapa.status == 'A' %}
-      <div id="aviso-limite" class="alert alert-warning py-2" style="font-size:0.85rem;display:{% if total_inscritos >= max_players %}block{% else %}none{% endif %}">
-        <i class="fas fa-exclamation-triangle mr-1"></i> Limite de {{ max_players }} players atingido.
-      </div>
-      <div id="form-inscricao" {% if total_inscritos >= max_players %}style="display:none"{% endif %}>
-        <input type="text" id="filtroPlayer" class="form-control form-control-sm mb-2" placeholder="Buscar player...">
-        <div style="font-size:0.75rem;color:#aaa;margin-bottom:6px">
-          <span id="sel-count">0</span> selecionado(s) &mdash;
-          <a href="#" id="selAll" style="color:#c9a84c">todos</a> /
-          <a href="#" id="selNone" style="color:#c9a84c">nenhum</a>
-        </div>
-        <div id="lista-players" style="max-height:260px;overflow-y:auto;border:1px solid #c9a84c22;border-radius:6px;padding:4px">
-          {% for p in players_disponiveis %}
-          <label class="player-item d-flex align-items-center mb-0 px-2 py-1"
-                 style="cursor:pointer;border-radius:4px;font-size:0.85rem"
-                 data-nome="{{ p.player|lower }}">
-            <input type="checkbox" class="chk-player mr-2" value="{{ p.id }}">
-            {{ p.player }}
-          </label>
-          {% empty %}
-          <div style="color:#666;font-size:0.85rem;padding:8px">Nenhum player disponível.</div>
-          {% endfor %}
-        </div>
-        <div style="font-size:0.75rem;color:#aaa;margin:8px 0">
-          Ao inscrever: buy-in (R$ {{ torneio.vlr_buyinn }}) + taxa adm (R$ {{ torneio.vlr_txadm }}) por player
-        </div>
-        <button class="btn btn-gold btn-sm w-100" id="btnInscrever">
-          <i class="fas fa-plus mr-1"></i> Inscrever Selecionados
-        </button>
-      </div>
-      {% else %}
-      <div class="empty-state" style="padding:20px">
-        <i class="fas fa-lock" style="font-size:1.5rem;color:#c9a84c44"></i>
-        <p style="font-size:0.85rem;margin-top:8px">
-          {% if etapa.status == 'I' %}Abra a etapa para inscrever players.
-          {% else %}Etapa finalizada.{% endif %}
-        </p>
-      </div>
-      {% endif %}
-    </div>
+<!-- Inscrever players (accordion colapsável) -->
+{% if etapa.status == 'A' %}
+<div class="card-dark mb-3">
+  <div class="d-flex justify-content-between align-items-center" style="cursor:pointer" id="toggleInscricao">
+    <div class="section-title mb-0"><i class="fas fa-user-plus mr-1"></i> Inscrever Players</div>
+    <i class="fas fa-chevron-down" id="iconInscricao"></i>
   </div>
 
-  <!-- Coluna direita: lista de inscritos -->
-  <div class="col-md-8 mb-4">
-    <div class="card-dark">
-      <div class="section-title"><i class="fas fa-users mr-1"></i> Players Inscritos</div>
-      <div class="table-responsive">
-        <table class="table table-borderless mb-0" style="font-size:0.85rem">
-          <thead>
-            <tr>
-              <th>Player</th>
-              <th class="text-center">Buy-in</th>
-              <th class="text-center">Rebuys</th>
-              <th class="text-center">Posição</th>
-              <th class="text-center">Pts</th>
-              {% if etapa.status == 'A' %}<th class="text-center">Ações</th>{% endif %}
-            </tr>
-          </thead>
-          <tbody id="tbody-inscritos">
-            {% for r in inscritos %}
-            <tr id="row-{{ r.id }}" data-ranking-id="{{ r.id }}" data-player-id="{{ r.id_player.id }}"
-                data-rebuy="{{ r.qtd_rebuy }}" data-posicao="{{ r.posicao }}">
-              <td><strong>{{ r.id_player.player }}</strong></td>
-              <td class="text-center">{{ r.buy_inn }}</td>
-              <td class="text-center td-rebuy">{{ r.qtd_rebuy }}</td>
-              <td class="text-center td-posicao">
-                {% if r.posicao > 0 %}
-                  <span style="color:#c9a84c;font-weight:bold">{{ r.posicao }}º</span>
-                {% else %}—{% endif %}
-              </td>
-              <td class="text-center td-pontuacao">
-                {% if r.pontuacao > 0 %}
-                  <span style="color:#c9a84c;font-weight:bold">{{ r.pontuacao }}</span>
-                {% else %}—{% endif %}
-              </td>
-              {% if etapa.status == 'A' %}
-              <td class="text-center" style="white-space:nowrap">
-                {% if r.posicao == 0 %}
-                <button class="btn btn-sm btn-outline-info mr-1 btn-rebuy"
-                  data-ranking-id="{{ r.id }}" data-player-id="{{ r.id_player.id }}"
-                  data-rebuy="{{ r.qtd_rebuy }}" data-max="{{ max_rebuy }}"
-                  {% if r.qtd_rebuy >= max_rebuy %}disabled title="Limite de rebuys atingido"{% endif %}>
-                  <i class="fas fa-redo"></i> Rebuy
-                </button>
-                <button class="btn btn-sm btn-outline-danger btn-eliminar"
-                  data-ranking-id="{{ r.id }}" data-player-id="{{ r.id_player.id }}"
-                  data-player-nome="{{ r.id_player.player }}">
-                  <i class="fas fa-skull-crossbones"></i> Eliminar
-                </button>
-                {% else %}
-                <span style="color:#6c757d;font-size:0.8rem"><i class="fas fa-check-circle mr-1"></i>Eliminado</span>
-                {% endif %}
-              </td>
-              {% endif %}
-            </tr>
-            {% empty %}
-            <tr id="row-empty"><td colspan="6" class="text-center" style="color:#666;padding:20px">Nenhum player inscrito.</td></tr>
-            {% endfor %}
-          </tbody>
-        </table>
+  <div id="painelInscricao" style="display:none;margin-top:12px">
+    <div id="aviso-limite" class="alert alert-warning py-2" style="font-size:0.85rem;display:{% if total_inscritos >= max_players %}block{% else %}none{% endif %}">
+      <i class="fas fa-exclamation-triangle mr-1"></i> Limite de {{ max_players }} players atingido.
+    </div>
+    <div id="form-inscricao" {% if total_inscritos >= max_players %}style="display:none"{% endif %}>
+      <input type="text" id="filtroPlayer" class="form-control mb-2" placeholder="&#128269; Buscar player..." style="font-size:1rem">
+      <div style="font-size:0.8rem;color:#aaa;margin-bottom:8px">
+        <span id="sel-count">0</span> selecionado(s) &mdash;
+        <a href="#" id="selAll" style="color:#c9a84c">todos</a> /
+        <a href="#" id="selNone" style="color:#c9a84c">nenhum</a>
+      </div>
+      <div id="lista-players" style="max-height:220px;overflow-y:auto;border:1px solid #c9a84c22;border-radius:8px;padding:4px">
+        {% for p in players_disponiveis %}
+        <label class="player-item d-flex align-items-center mb-0 px-3 py-2"
+               style="cursor:pointer;border-radius:6px;font-size:0.95rem;border-bottom:1px solid #ffffff08"
+               data-nome="{{ p.player|lower }}">
+          <input type="checkbox" class="chk-player mr-3" value="{{ p.id }}" style="width:18px;height:18px">
+          {{ p.player }}
+        </label>
+        {% empty %}
+        <div style="color:#666;font-size:0.85rem;padding:12px">Nenhum player disponível.</div>
+        {% endfor %}
+      </div>
+      <button class="btn btn-gold w-100 mt-3" id="btnInscrever" style="font-size:1rem;padding:12px">
+        <i class="fas fa-plus mr-1"></i> Inscrever Selecionados
+      </button>
+    </div>
+  </div>
+</div>
+{% endif %}
+
+<!-- Lista de inscritos em cards -->
+<div class="card-dark">
+  <div class="section-title"><i class="fas fa-users mr-1"></i> Players Inscritos</div>
+  <div id="lista-inscritos">
+    {% for r in inscritos %}
+    <div class="player-card {% if r.posicao > 0 %}eliminado{% endif %}"
+         id="row-{{ r.id }}"
+         data-ranking-id="{{ r.id }}"
+         data-player-id="{{ r.id_player.id }}"
+         data-rebuy="{{ r.qtd_rebuy }}"
+         data-posicao="{{ r.posicao }}">
+      <div class="d-flex justify-content-between align-items-center">
+        <div>
+          <div class="pname">{{ r.id_player.player }}</div>
+          <div class="pinfo">
+            Buy-in: {{ r.buy_inn }} &nbsp;|&nbsp;
+            Rebuys: <span class="td-rebuy">{{ r.qtd_rebuy }}</span>
+            {% if r.posicao > 0 %}
+            &nbsp;|&nbsp; <span class="ppos">{{ r.posicao }}º &mdash; <span class="td-pontuacao">{{ r.pontuacao }}</span> pts</span>
+            {% endif %}
+          </div>
+        </div>
+        {% if etapa.status == 'A' %}
+        <div class="d-flex" style="gap:6px">
+          {% if r.posicao == 0 %}
+          <button class="btn btn-touch btn-outline-info btn-rebuy"
+            data-ranking-id="{{ r.id }}" data-player-id="{{ r.id_player.id }}"
+            data-rebuy="{{ r.qtd_rebuy }}" data-max="{{ max_rebuy }}"
+            {% if r.qtd_rebuy >= max_rebuy %}disabled{% endif %}>
+            <i class="fas fa-redo"></i>
+          </button>
+          <button class="btn btn-touch btn-outline-danger btn-eliminar"
+            data-ranking-id="{{ r.id }}" data-player-id="{{ r.id_player.id }}"
+            data-player-nome="{{ r.id_player.player }}">
+            <i class="fas fa-skull-crossbones"></i>
+          </button>
+          {% else %}
+          <span style="color:#6c757d;font-size:0.8rem"><i class="fas fa-check-circle mr-1"></i>Eliminado</span>
+          {% endif %}
+        </div>
+        {% endif %}
       </div>
     </div>
+    {% empty %}
+    <div style="text-align:center;color:#666;padding:30px">
+      <i class="fas fa-users" style="font-size:2rem;color:#c9a84c22"></i>
+      <p style="margin-top:8px">Nenhum player inscrito.</p>
+    </div>
+    {% endfor %}
   </div>
 </div>
 
@@ -210,16 +204,16 @@
   <div class="modal-dialog modal-sm">
     <div class="modal-content" style="background:#16213e;border:1px solid #c9484855;color:#e0e0e0">
       <div class="modal-header" style="border-bottom:1px solid #c9484855">
-        <h5 class="modal-title" style="color:#c94848"><i class="fas fa-skull-crossbones mr-2"></i>Eliminar Player</h5>
+        <h5 class="modal-title" style="color:#c94848"><i class="fas fa-skull-crossbones mr-2"></i>Eliminar</h5>
         <button type="button" class="close" data-dismiss="modal" style="color:#e0e0e0">&times;</button>
       </div>
-      <div class="modal-body">
-        <p style="font-size:0.9rem">Confirma a eliminação de <strong id="eliminar-nome"></strong>?</p>
-        <p style="font-size:0.85rem;color:#aaa">Posição será atribuída automaticamente: <strong id="eliminar-posicao-preview" style="color:#c9a84c"></strong></p>
+      <div class="modal-body text-center" style="padding:20px">
+        <div style="font-size:1rem;margin-bottom:8px">Eliminar <strong id="eliminar-nome"></strong>?</div>
+        <div style="font-size:0.9rem;color:#aaa">Posição: <strong id="eliminar-posicao-preview" style="color:#c9a84c;font-size:1.1rem"></strong></div>
       </div>
-      <div class="modal-footer" style="border-top:1px solid #c9484855">
-        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancelar</button>
-        <button type="button" class="btn btn-danger btn-sm" id="btnConfirmarEliminar">
+      <div class="modal-footer" style="border-top:1px solid #c9484855;justify-content:space-between">
+        <button type="button" class="btn btn-secondary" data-dismiss="modal" style="flex:1;margin-right:8px">Cancelar</button>
+        <button type="button" class="btn btn-danger" id="btnConfirmarEliminar" style="flex:1">
           <i class="fas fa-skull-crossbones mr-1"></i>Confirmar
         </button>
       </div>
@@ -231,14 +225,14 @@
 
 {% block extra_js %}
 <script>
-const ETAPA_ID = {{ etapa.id }};
+const ETAPA_ID    = {{ etapa.id }};
 const MAX_PLAYERS = {{ max_players }};
-const MAX_REBUY = {{ max_rebuy }};
+const MAX_REBUY   = {{ max_rebuy }};
 const VLR_BUYINN  = parseFloat("{{ torneio.vlr_buyinn|stringformat:'f' }}");
 const VLR_REBUY   = parseFloat("{{ torneio.vlr_rebuy|stringformat:'f' }}");
 const VLR_TXADM   = parseFloat("{{ torneio.vlr_txadm|stringformat:'f' }}");
 const VLR_JACKPOT = parseFloat("{{ torneio.vlr_jackpot|stringformat:'f' }}");
-let currentEliminarPlayerId = null;
+let currentEliminarPlayerId  = null;
 let currentEliminarRankingId = null;
 
 function getCookie(name) {
@@ -264,41 +258,37 @@ function apiPost(url, data) {
 }
 
 function fmt(v) {
-  return 'R$ ' + v.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
+  return 'R$' + v.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.');
 }
 
 function recalcularFinanceiro() {
   let qtdBuyInn = 0, qtdRebuy = 0;
-  document.querySelectorAll('#tbody-inscritos tr[data-ranking-id]').forEach(function(row) {
+  document.querySelectorAll('#lista-inscritos [data-ranking-id]').forEach(function(card) {
     qtdBuyInn += 1;
-    qtdRebuy  += parseInt(row.querySelector('.td-rebuy').textContent) || 0;
+    qtdRebuy  += parseInt(card.querySelector('.td-rebuy').textContent) || 0;
   });
-
-  const txAdm      = qtdBuyInn * VLR_TXADM;
+  const txAdm     = qtdBuyInn * VLR_TXADM;
   const arrecadado = (qtdBuyInn * VLR_BUYINN) + (qtdRebuy * VLR_REBUY) + txAdm;
-  const jackpot    = (qtdBuyInn + qtdRebuy) * VLR_JACKPOT;
-  const prizePool  = arrecadado - txAdm - jackpot;
-
-  console.group('%c=== recalcularFinanceiro ===', 'color:#c9a84c;font-weight:bold');
-  console.log('  VLR_BUYINN=%f  VLR_REBUY=%f  VLR_TXADM=%f  VLR_JACKPOT=%f', VLR_BUYINN, VLR_REBUY, VLR_TXADM, VLR_JACKPOT);
-  console.log('  qtdBuyInn=%d  qtdRebuy=%d', qtdBuyInn, qtdRebuy);
-  console.log('  Arrecadado = (%d×%d) + (%d×%d) + (%d×%d) = %f', qtdBuyInn, VLR_BUYINN, qtdRebuy, VLR_REBUY, qtdBuyInn, VLR_TXADM, arrecadado);
-  console.log('  Jackpot    = (%d+%d) × %d = %f', qtdBuyInn, qtdRebuy, VLR_JACKPOT, jackpot);
-  console.log('  Taxa Adm   = %d × %d = %f  (só buy-ins)', qtdBuyInn, VLR_TXADM, txAdm);
-  console.log('  Prize Pool = %f - %f - %f = %f', arrecadado, txAdm, jackpot, prizePool);
-  console.groupEnd();
-  console.groupEnd();
-
+  const jackpot   = (qtdBuyInn + qtdRebuy) * VLR_JACKPOT;
+  const prizePool = arrecadado - txAdm - jackpot;
   document.getElementById('ind-arrecadado').textContent = fmt(arrecadado);
   document.getElementById('ind-jackpot').textContent    = fmt(jackpot);
-  document.getElementById('ind-txadm').textContent      = fmt(txAdm);
   document.getElementById('ind-prizepool').textContent  = fmt(prizePool);
 }
-
-// Calcula ao carregar
 recalcularFinanceiro();
 
-// Alterar status da etapa
+// Toggle painel inscrição
+{% if etapa.status == 'A' %}
+document.getElementById('toggleInscricao').addEventListener('click', function() {
+  const painel = document.getElementById('painelInscricao');
+  const icon   = document.getElementById('iconInscricao');
+  const aberto = painel.style.display !== 'none';
+  painel.style.display = aberto ? 'none' : 'block';
+  icon.className = aberto ? 'fas fa-chevron-down' : 'fas fa-chevron-up';
+});
+{% endif %}
+
+// Alterar status
 const LABELS = { A: 'abertura', F: 'finalização', I: 'inativação' };
 const BADGES = {
   A: '<span class="badge-status-A"><i class="fas fa-circle mr-1" style="font-size:0.5rem"></i>Aberta</span>',
@@ -306,12 +296,11 @@ const BADGES = {
   I: '<span class="badge-status-I">Inativa</span>'
 };
 const BOTOES = {
-  A: '<button class="btn btn-sm btn-status mr-1" style="background:#c9a84c22;color:#c9a84c;border:1px solid #c9a84c55" data-novo="F"><i class="fas fa-flag-checkered mr-1"></i> Finalizar</button>'
-     + '<button class="btn btn-sm btn-status" style="background:#6c757d22;color:#aaa;border:1px solid #6c757d55" data-novo="I"><i class="fas fa-pause mr-1"></i> Inativar</button>',
-  F: '<button class="btn btn-sm btn-status" style="background:#6c757d22;color:#aaa;border:1px solid #6c757d55" data-novo="I"><i class="fas fa-undo mr-1"></i> Reabrir como Inativa</button>',
-  I: '<button class="btn btn-gold btn-sm btn-status" data-novo="A"><i class="fas fa-lock-open mr-1"></i> Abrir</button>'
+  A: '<button class="btn btn-sm btn-status mr-1" style="background:#c9a84c22;color:#c9a84c;border:1px solid #c9a84c55" data-novo="F"><i class="fas fa-flag-checkered mr-1"></i>Finalizar</button>'
+   + '<button class="btn btn-sm btn-status" style="background:#6c757d22;color:#aaa;border:1px solid #6c757d55" data-novo="I"><i class="fas fa-pause"></i></button>',
+  F: '<button class="btn btn-sm btn-status" style="background:#6c757d22;color:#aaa;border:1px solid #6c757d55" data-novo="I"><i class="fas fa-undo mr-1"></i>Reabrir</button>',
+  I: '<button class="btn btn-gold btn-sm btn-status" data-novo="A"><i class="fas fa-lock-open mr-1"></i>Abrir</button>'
 };
-
 document.addEventListener('click', function(e) {
   const btn = e.target.closest('.btn-status');
   if (!btn) return;
@@ -325,9 +314,7 @@ document.addEventListener('click', function(e) {
     });
 });
 
-// Inscrever players (múltiplos)
 {% if etapa.status == 'A' %}
-
 // Filtro de busca
 document.getElementById('filtroPlayer').addEventListener('input', function() {
   const q = this.value.toLowerCase();
@@ -336,21 +323,13 @@ document.getElementById('filtroPlayer').addEventListener('input', function() {
   });
 });
 
-// Hover highlight
-document.querySelectorAll('.player-item').forEach(function(el) {
-  el.addEventListener('mouseenter', function() { this.style.background = '#0f3460'; });
-  el.addEventListener('mouseleave', function() { this.style.background = ''; });
-});
-
-// Contador de selecionados
+// Seleção
 function atualizarContador() {
-  const n = document.querySelectorAll('.chk-player:checked').length;
-  document.getElementById('sel-count').textContent = n;
+  document.getElementById('sel-count').textContent = document.querySelectorAll('.chk-player:checked').length;
 }
 document.addEventListener('change', function(e) {
   if (e.target.classList.contains('chk-player')) atualizarContador();
 });
-
 document.getElementById('selAll').addEventListener('click', function(e) {
   e.preventDefault();
   document.querySelectorAll('.player-item:not([style*="display: none"]) .chk-player').forEach(c => c.checked = true);
@@ -362,90 +341,94 @@ document.getElementById('selNone').addEventListener('click', function(e) {
   atualizarContador();
 });
 
+// Inscrever
 document.getElementById('btnInscrever').addEventListener('click', function() {
   const selecionados = Array.from(document.querySelectorAll('.chk-player:checked')).map(c => parseInt(c.value));
   if (!selecionados.length) { alert('Selecione ao menos um player.'); return; }
-
   const qtdAtual = parseInt(document.getElementById('qtd-inscritos').textContent);
   const vagas = MAX_PLAYERS - qtdAtual;
   if (vagas <= 0) { alert('Limite de players atingido.'); return; }
-  if (selecionados.length > vagas) {
-    alert('Apenas ' + vagas + ' vaga(s) disponível(is). Selecione menos players.'); return;
-  }
+  if (selecionados.length > vagas) { alert('Apenas ' + vagas + ' vaga(s) disponível(is).'); return; }
+
+  const btn = this;
+  btn.disabled = true;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i> Inscrevendo...';
 
   apiPost('/pkapp/api/etapas/' + ETAPA_ID + '/inscrito/', selecionados.map(id => ({id})))
     .then(data => {
-      if (data.error) { alert('Erro: ' + data.error); return; }
-      if (data.detail) { alert('Erro de autenticação: ' + data.detail); return; }
+      if (data.error) { alert('Erro: ' + data.error); btn.disabled = false; btn.innerHTML = '<i class="fas fa-plus mr-1"></i> Inscrever Selecionados'; return; }
       location.reload();
     })
-    .catch(err => { alert('Erro na requisição: ' + err); });
+    .catch(err => { alert('Erro: ' + err); btn.disabled = false; btn.innerHTML = '<i class="fas fa-plus mr-1"></i> Inscrever Selecionados'; });
 });
 
 // Rebuy
 document.addEventListener('click', function(e) {
   const btn = e.target.closest('.btn-rebuy');
   if (!btn) return;
-  const playerId = btn.dataset.playerId;
+  const playerId  = btn.dataset.playerId;
   const rankingId = btn.dataset.rankingId;
-  const rebuyAtual = parseInt(btn.dataset.rebuy);
-  if (rebuyAtual >= MAX_REBUY) { alert('Limite de rebuys atingido.'); return; }
+  if (parseInt(btn.dataset.rebuy) >= MAX_REBUY) { alert('Limite de rebuys atingido.'); return; }
 
+  btn.disabled = true;
   apiPost('/pkapp/api/etapas/' + ETAPA_ID + '/rebuy/', {player_id: parseInt(playerId)})
     .then(data => {
-      if (data.error) { alert(data.error); return; }
-      const row = document.getElementById('row-' + rankingId);
+      if (data.error) { alert(data.error); btn.disabled = false; return; }
+      const card = document.getElementById('row-' + rankingId);
       const novoRebuy = data.qtd_rebuy;
-      row.querySelector('.td-rebuy').textContent = novoRebuy;
-      btn.dataset.rebuy = novoRebuy;
-      if (novoRebuy >= MAX_REBUY) {
-        btn.disabled = true;
-        btn.title = 'Limite de rebuys atingido';
-      }
+      card.querySelector('.td-rebuy').textContent = novoRebuy;
+      card.dataset.rebuy = novoRebuy;
+      btn.dataset.rebuy  = novoRebuy;
+      if (novoRebuy >= MAX_REBUY) { btn.disabled = true; btn.title = 'Limite atingido'; }
+      else { btn.disabled = false; }
       recalcularFinanceiro();
     });
 });
 
-// Eliminar - abrir modal
+// Eliminar — abrir modal
 document.addEventListener('click', function(e) {
   const btn = e.target.closest('.btn-eliminar');
   if (!btn) return;
-  currentEliminarPlayerId = parseInt(btn.dataset.playerId);
+  currentEliminarPlayerId  = parseInt(btn.dataset.playerId);
   currentEliminarRankingId = btn.dataset.rankingId;
   document.getElementById('eliminar-nome').textContent = btn.dataset.playerNome;
-  // Posição = número de players ainda ativos (posicao == 0)
-  const ativos = document.querySelectorAll('#tbody-inscritos tr[data-ranking-id][data-posicao="0"]').length;
+  const ativos = document.querySelectorAll('#lista-inscritos [data-ranking-id][data-posicao="0"]').length;
   document.getElementById('eliminar-posicao-preview').textContent = ativos + 'º lugar';
   $('#modalEliminar').modal('show');
 });
 
-// Eliminar - confirmar
+// Eliminar — confirmar
 document.getElementById('btnConfirmarEliminar').addEventListener('click', function() {
-  const ativos = document.querySelectorAll('#tbody-inscritos tr[data-ranking-id][data-posicao="0"]').length;
-  const posicao = ativos;
+  const ativos  = document.querySelectorAll('#lista-inscritos [data-ranking-id][data-posicao="0"]').length;
+  const btn     = this;
+  btn.disabled  = true;
 
   apiPost('/pkapp/api/etapas/' + ETAPA_ID + '/eliminar/', {
     player_id: currentEliminarPlayerId,
-    posicao: posicao
+    posicao:   ativos
   }).then(data => {
+    btn.disabled = false;
     if (data.error) { alert(data.error); return; }
     $('#modalEliminar').modal('hide');
-    const row = document.getElementById('row-' + currentEliminarRankingId);
-    row.dataset.posicao = posicao;
-    const pts = data.pontuacao > 0 ? '<span style="color:#c9a84c;font-weight:bold">' + data.pontuacao + '</span>' : '—';
-    row.querySelector('.td-posicao').innerHTML = '<span style="color:#c9a84c;font-weight:bold">' + data.posicao + 'º</span>';
-    row.querySelector('.td-pontuacao').innerHTML = pts;
-    const tdAcoes = row.querySelector('td:last-child');
-    tdAcoes.innerHTML = '<span style="color:#6c757d;font-size:0.8rem"><i class="fas fa-check-circle mr-1"></i>Eliminado</span>';
+
+    const card = document.getElementById('row-' + currentEliminarRankingId);
+    card.dataset.posicao = data.posicao;
+    card.classList.add('eliminado');
+    const pts = data.pontuacao > 0 ? data.pontuacao + ' pts' : '0 pts';
+    card.querySelector('.pinfo').innerHTML =
+      'Buy-in: ' + card.querySelector('.pinfo').textContent.match(/Buy-in: (\d+)/)[1] +
+      ' &nbsp;|&nbsp; Rebuys: ' + card.querySelector('.td-rebuy').textContent +
+      ' &nbsp;|&nbsp; <span class="ppos">' + data.posicao + 'º &mdash; ' + pts + '</span>';
+    const acoes = card.querySelector('.d-flex');
+    if (acoes) acoes.innerHTML = '<span style="color:#6c757d;font-size:0.8rem"><i class="fas fa-check-circle mr-1"></i>Eliminado</span>';
 
     if (data.etapa_finalizada) {
       document.getElementById('badge-status').innerHTML = '<span class="badge-status-F">Finalizada</span>';
-      const formInsc = document.getElementById('form-inscricao');
-      if (formInsc) formInsc.style.display = 'none';
-      const thAcoes = document.querySelector('#tbody-inscritos').closest('table').querySelector('thead tr th:last-child');
-      if (thAcoes) thAcoes.remove();
+      document.getElementById('acoes-status').innerHTML = BOTOES['F'];
+      const painel = document.getElementById('painelInscricao');
+      if (painel) painel.style.display = 'none';
     }
-  }).catch(err => { alert('Erro: ' + err); });
+  }).catch(err => { btn.disabled = false; alert('Erro: ' + err); });
 });
 {% endif %}
 </script>
