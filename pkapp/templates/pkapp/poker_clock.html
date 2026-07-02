@@ -875,6 +875,8 @@
     const VLR_JACKPOT_CLK = {{ torneio.vlr_jackpot }};
     const TOTAL_BUYINS_CLK = {{ total_inscritos }};
     let totalRebuysClk = {{ total_rebuys }};
+    let clockEliminarPlayerId  = null;
+    let clockEliminarRankingId = null;
 
     function fmtR(v) { return 'R$ ' + v.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
 
