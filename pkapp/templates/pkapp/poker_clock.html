@@ -357,17 +357,17 @@
         <div class="panel-title" style="border:none;margin-bottom:8px"><i class="fas fa-trophy mr-2"></i>Payouts</div>
         <div class="payout-item">
           <span class="payout-pos"><i class="fas fa-trophy" style="color:#FFD700"></i> 1º</span>
-          <span class="payout-value">R$ {{ payout_1|floatformat:2 }}</span>
+          <span class="payout-value" id="stat-payout1">R$ {{ payout_1|floatformat:2 }}</span>
           <span style="color:#aaa;font-size:0.8rem">50%</span>
         </div>
         <div class="payout-item">
           <span class="payout-pos"><i class="fas fa-trophy" style="color:#C0C0C0"></i> 2º</span>
-          <span class="payout-value">R$ {{ payout_2|floatformat:2 }}</span>
+          <span class="payout-value" id="stat-payout2">R$ {{ payout_2|floatformat:2 }}</span>
           <span style="color:#aaa;font-size:0.8rem">30%</span>
         </div>
         <div class="payout-item">
           <span class="payout-pos"><i class="fas fa-trophy" style="color:#CD7F32"></i> 3º</span>
-          <span class="payout-value">R$ {{ payout_3|floatformat:2 }}</span>
+          <span class="payout-value" id="stat-payout3">R$ {{ payout_3|floatformat:2 }}</span>
           <span style="color:#aaa;font-size:0.8rem">20%</span>
         </div>
       </div>
@@ -894,6 +894,9 @@
       document.getElementById('stat-arrecadado').textContent = fmtR(arrecadado);
       document.getElementById('stat-jackpot').textContent    = fmtR(jackpot);
       document.getElementById('stat-prizepool').textContent  = fmtR(prizepool);
+      document.getElementById('stat-payout1').textContent    = fmtR(prizepool * 0.50);
+      document.getElementById('stat-payout2').textContent    = fmtR(prizepool * 0.30);
+      document.getElementById('stat-payout3').textContent    = fmtR(prizepool * 0.20);
     }
 
     function apiPostClock(url, data) {
