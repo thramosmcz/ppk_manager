@@ -1,8 +1,10 @@
 <!DOCTYPE html>
+{% load static %}
 <html lang="pt-br">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="csrf-token" content="{{ csrf_token }}">
   <title>Poker Clock - {{ torneio.torneio }} - {{ etapa.etapa }}</title>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.4/css/all.min.css">
   <style>
@@ -874,7 +876,7 @@
       return fetch(url, {
         method: 'POST',
         credentials: 'same-origin',
-        headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCookieClock('csrftoken')},
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN || getCookieClock('csrftoken')},
         body: JSON.stringify(data)
       }).then(function(r) { return r.json(); });
     }
@@ -883,6 +885,9 @@
       let v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
       return v ? v[2] : null;
     }
+
+    // CSRF token via meta tag
+    const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || getCookieClock('csrftoken');
 
     // Rebuy
     document.addEventListener('click', function(e) {
