@@ -756,6 +756,8 @@ def poker_clock(request, id):
         'total_rebuys':       total_rebuys,
         'total_valor_buyins': total_valor_buyins,
         'total_valor_rebuys': total_valor_rebuys,
+        'txadm':              txadm,
+        'total_arrecadado':   total_valor_buyins + total_valor_rebuys + txadm,
         'jackpot':            jackpot,
         'prizepool':          prizepool,
         'payout_1':           prizepool * 0.50,

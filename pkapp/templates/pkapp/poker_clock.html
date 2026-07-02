@@ -234,6 +234,29 @@
       font-size: 0.9rem; cursor: pointer; transition: all 0.2s;
     }
     .btn-sm-modal:hover { transform: scale(1.03); }
+
+    /* Botões dentro do painel de players */
+    .btn-clock {
+      background: none; border: 1px solid #c9a84c44; border-radius: 4px;
+      color: #c9a84c; padding: 2px 6px; font-size: 0.72rem; cursor: pointer;
+      transition: all 0.2s;
+    }
+    .btn-clock:hover:not(:disabled) { background: #c9a84c22; }
+    .btn-clock:disabled { opacity: 0.35; cursor: not-allowed; }
+    .btn-eliminar-clock { border-color: #c9484855; color: #c94848; }
+    .btn-eliminar-clock:hover { background: #c9484822 !important; }
+
+    /* Modal confirm eliminar clock */
+    .modal-clock {
+      display: none; position: fixed; inset: 0;
+      background: rgba(0,0,0,0.75); z-index: 200;
+      justify-content: center; align-items: center;
+    }
+    .modal-clock.open { display: flex; }
+    .modal-clock-box {
+      background: #16213e; border: 2px solid #c9484855;
+      border-radius: 12px; padding: 24px; width: 300px; text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -253,7 +276,7 @@
       </div>
       <div class="stat">
         <span class="stat-label">Rebuys</span>
-        <span class="stat-value">{{ total_rebuys }}</span>
+        <span class="stat-value" id="stat-rebuys">{{ total_rebuys }}</span>
       </div>
       <div class="stat">
         <span class="stat-label">Buy-ins Total</span>
@@ -261,7 +284,15 @@
       </div>
       <div class="stat">
         <span class="stat-label">Rebuys Total</span>
-        <span class="stat-value" style="color:#c9a84c">R$ {{ total_valor_rebuys|floatformat:2 }}</span>
+        <span class="stat-value" style="color:#c9a84c" id="stat-vlr-rebuys">R$ {{ total_valor_rebuys|floatformat:2 }}</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Tx. Administração</span>
+        <span class="stat-value" style="color:#aaa">R$ {{ txadm|floatformat:2 }}</span>
+      </div>
+      <div class="stat">
+        <span class="stat-label">Total Arrecadado</span>
+        <span class="stat-value" style="color:#e0e0e0">R$ {{ total_arrecadado|floatformat:2 }}</span>
       </div>
       <div class="stat">
         <span class="stat-label">Jackpot</span>
@@ -288,16 +319,28 @@
 
     <!-- Right Panel: Players & Payouts -->
     <div class="panel">
-      <div class="panel-title"><i class="fas fa-users mr-2"></i>Players ({{ total_ativos }} ativos)</div>
-      <div class="player-list">
+      <div class="panel-title"><i class="fas fa-users mr-2"></i>Players (<span id="count-ativos">{{ total_ativos }}</span> ativos)</div>
+      <div class="player-list" id="player-list">
         {% for p in ativos %}
-        <div class="player-item">
-          <div class="player-name">{{ p.id_player.player }}</div>
+        <div class="player-item" id="pitem-{{ p.id }}" data-ranking-id="{{ p.id }}" data-player-id="{{ p.id_player.id }}" data-rebuy="{{ p.qtd_rebuy }}" data-max-rebuy="{{ torneio.qtd_rebuy }}">
+          <div class="d-flex justify-content-between align-items-center">
+            <div class="player-name">{{ p.id_player.player }}</div>
+            <div style="display:flex;gap:4px">
+              <button class="btn-clock btn-rebuy-clock" data-id="{{ p.id }}" data-player-id="{{ p.id_player.id }}" data-rebuy="{{ p.qtd_rebuy }}" data-max="{{ torneio.qtd_rebuy }}"
+                title="Rebuy ({{ p.qtd_rebuy }}/{{ torneio.qtd_rebuy }})"
+                {% if p.qtd_rebuy >= torneio.qtd_rebuy %}disabled{% endif %}>
+                <i class="fas fa-redo"></i> <span class="rebuy-count">{{ p.qtd_rebuy }}</span>
+              </button>
+              <button class="btn-clock btn-eliminar-clock" data-id="{{ p.id }}" data-player-id="{{ p.id_player.id }}" data-nome="{{ p.id_player.player }}" title="Eliminar">
+                <i class="fas fa-skull-crossbones"></i>
+              </button>
+            </div>
+          </div>
         </div>
         {% endfor %}
         {% if eliminados %}
-        <div style="margin-top:20px;padding-top:10px;border-top:1px solid #c9a84c44">
-          <div style="color:#aaa;font-size:0.85rem;margin-bottom:10px">ELIMINADOS</div>
+        <div style="margin-top:10px;padding-top:8px;border-top:1px solid #c9a84c44" id="lista-eliminados">
+          <div style="color:#aaa;font-size:0.75rem;margin-bottom:6px">ELIMINADOS</div>
           {% for p in eliminados %}
           <div class="player-item eliminated">
             <div class="player-name">{{ p.id_player.player }}</div>
@@ -308,8 +351,8 @@
         {% endif %}
       </div>
 
-      <div style="margin-top:20px;border-top:2px solid #c9a84c44;padding-top:15px">
-        <div class="panel-title" style="border:none;margin-bottom:10px"><i class="fas fa-trophy mr-2"></i>Payouts</div>
+      <div style="margin-top:12px;border-top:2px solid #c9a84c44;padding-top:10px">
+        <div class="panel-title" style="border:none;margin-bottom:8px"><i class="fas fa-trophy mr-2"></i>Payouts</div>
         <div class="payout-item">
           <span class="payout-pos"><i class="fas fa-trophy" style="color:#FFD700"></i> 1º</span>
           <span class="payout-value">R$ {{ payout_1|floatformat:2 }}</span>
@@ -427,6 +470,21 @@
         </button>
         <button class="btn-sm-modal" id="btnCloseBlinds" style="background:#333;color:#aaa">
           Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal: Confirmar Eliminação -->
+  <div class="modal-clock" id="modalEliminarClock">
+    <div class="modal-clock-box">
+      <div style="color:#c94848;font-size:1.5rem;margin-bottom:12px"><i class="fas fa-skull-crossbones"></i></div>
+      <div style="color:#e0e0e0;font-size:0.95rem;margin-bottom:6px">Eliminar <strong id="clock-eliminar-nome"></strong>?</div>
+      <div style="color:#aaa;font-size:0.8rem;margin-bottom:18px">Posição: <strong id="clock-eliminar-pos" style="color:#c9a84c"></strong></div>
+      <div style="display:flex;gap:10px;justify-content:center">
+        <button class="btn-sm-modal" id="btnCancelarEliminarClock" style="background:#333;color:#aaa">Cancelar</button>
+        <button class="btn-sm-modal" id="btnConfirmarEliminarClock" style="background:#c94848;color:white;font-weight:bold">
+          <i class="fas fa-skull-crossbones mr-1"></i> Confirmar
         </button>
       </div>
     </div>
@@ -806,6 +864,113 @@
 
     updateDisplay();
     carregarConfigSom();
+
+    // ---- Rebuy e Eliminação direto no Clock ----
+    const ETAPA_ID_CLOCK = {{ etapa.id }};
+    let clockEliminarPlayerId = null;
+    let clockEliminarRankingId = null;
+
+    function apiPostClock(url, data) {
+      return fetch(url, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCookieClock('csrftoken')},
+        body: JSON.stringify(data)
+      }).then(function(r) { return r.json(); });
+    }
+
+    function getCookieClock(name) {
+      let v = document.cookie.match('(^|;) ?' + name + '=([^;]*)(;|$)');
+      return v ? v[2] : null;
+    }
+
+    // Rebuy
+    document.addEventListener('click', function(e) {
+      const btn = e.target.closest('.btn-rebuy-clock');
+      if (!btn) return;
+      const rankingId = btn.dataset.id;
+      const playerId  = btn.dataset.playerId;
+      const rebuyAtual = parseInt(btn.dataset.rebuy);
+      const maxRebuy   = parseInt(btn.dataset.max);
+      if (rebuyAtual >= maxRebuy) { alert('Limite de rebuys atingido.'); return; }
+
+      apiPostClock('/pkapp/api/etapas/' + ETAPA_ID_CLOCK + '/rebuy/', {player_id: parseInt(playerId)})
+        .then(function(data) {
+          if (data.error) { alert(data.error); return; }
+          const novoRebuy = data.qtd_rebuy;
+          btn.dataset.rebuy = novoRebuy;
+          btn.querySelector('.rebuy-count').textContent = novoRebuy;
+          btn.title = 'Rebuy (' + novoRebuy + '/' + maxRebuy + ')';
+          if (novoRebuy >= maxRebuy) btn.disabled = true;
+          // Atualiza stat de rebuys
+          const statRebuys = document.getElementById('stat-rebuys');
+          if (statRebuys) statRebuys.textContent = parseInt(statRebuys.textContent) + 1;
+        });
+    });
+
+    // Eliminar — abrir modal
+    document.addEventListener('click', function(e) {
+      const btn = e.target.closest('.btn-eliminar-clock');
+      if (!btn) return;
+      clockEliminarPlayerId  = parseInt(btn.dataset.playerId);
+      clockEliminarRankingId = btn.dataset.id;
+      const ativos = document.querySelectorAll('#player-list .player-item:not(.eliminated)').length;
+      document.getElementById('clock-eliminar-nome').textContent = btn.dataset.nome;
+      document.getElementById('clock-eliminar-pos').textContent  = ativos + 'º lugar';
+      document.getElementById('modalEliminarClock').classList.add('open');
+    });
+
+    document.getElementById('btnCancelarEliminarClock').addEventListener('click', function() {
+      document.getElementById('modalEliminarClock').classList.remove('open');
+    });
+
+    document.getElementById('btnConfirmarEliminarClock').addEventListener('click', function() {
+      const ativos  = document.querySelectorAll('#player-list .player-item:not(.eliminated)').length;
+      const posicao = ativos;
+
+      apiPostClock('/pkapp/api/etapas/' + ETAPA_ID_CLOCK + '/eliminar/', {
+        player_id: clockEliminarPlayerId,
+        posicao:   posicao
+      }).then(function(data) {
+        if (data.error) { alert(data.error); return; }
+        document.getElementById('modalEliminarClock').classList.remove('open');
+
+        // Move o item de ativo para eliminado
+        const item = document.getElementById('pitem-' + clockEliminarRankingId);
+        if (item) {
+          item.classList.add('eliminated');
+          item.innerHTML = '<div class="d-flex justify-content-between"><div class="player-name">' +
+            document.getElementById('clock-eliminar-nome').textContent +
+            '</div><div class="player-pos">' + data.posicao + 'º lugar</div></div>';
+
+          // Garante que a seção "eliminados" existe
+          let secElim = document.getElementById('lista-eliminados');
+          if (!secElim) {
+            secElim = document.createElement('div');
+            secElim.id = 'lista-eliminados';
+            secElim.style = 'margin-top:10px;padding-top:8px;border-top:1px solid #c9a84c44';
+            secElim.innerHTML = '<div style="color:#aaa;font-size:0.75rem;margin-bottom:6px">ELIMINADOS</div>';
+            document.getElementById('player-list').appendChild(secElim);
+          }
+          secElim.appendChild(item);
+        }
+
+        // Atualiza contador
+        const novosAtivos = document.querySelectorAll('#player-list .player-item:not(.eliminated)').length;
+        document.getElementById('count-ativos').textContent = novosAtivos;
+        const statAtivos = document.getElementById('stat-ativos');
+        if (statAtivos) {
+          const total = statAtivos.textContent.split('/')[1]?.trim() || '?';
+          statAtivos.textContent = novosAtivos + ' / ' + total;
+        }
+
+        if (data.etapa_finalizada) {
+          document.getElementById('modalEliminarClock').classList.remove('open');
+          setTimeout(function() { alert('Etapa finalizada!'); }, 300);
+        }
+      });
+    });
+    // ---- fim Rebuy e Eliminação ----
   </script>
 </body>
 </html>
