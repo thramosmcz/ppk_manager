@@ -889,10 +889,14 @@
     // CSRF token via meta tag
     const CSRF_TOKEN = document.querySelector('meta[name="csrf-token"]')?.content || getCookieClock('csrftoken');
 
+    // Alias para compatibilidade com carregarConfigSom
+    function getCookie(name) { return getCookieClock(name); }
+
     // Rebuy
     document.addEventListener('click', function(e) {
       const btn = e.target.closest('.btn-rebuy-clock');
       if (!btn) return;
+      console.log('[clock] rebuy clicado', btn.dataset);
       const rankingId = btn.dataset.id;
       const playerId  = btn.dataset.playerId;
       const rebuyAtual = parseInt(btn.dataset.rebuy);
@@ -917,6 +921,7 @@
     document.addEventListener('click', function(e) {
       const btn = e.target.closest('.btn-eliminar-clock');
       if (!btn) return;
+      console.log('[clock] eliminar clicado', btn.dataset);
       clockEliminarPlayerId  = parseInt(btn.dataset.playerId);
       clockEliminarRankingId = btn.dataset.id;
       const ativos = document.querySelectorAll('#player-list .player-item:not(.eliminated)').length;
