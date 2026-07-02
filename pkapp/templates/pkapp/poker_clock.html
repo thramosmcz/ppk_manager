@@ -868,11 +868,11 @@
     carregarConfigSom();
 
     // ---- Rebuy e Eliminação direto no Clock ----
-    const ETAPA_ID_CLOCK  = {{ etapa.id }};
-    const VLR_BUYINN_CLK  = {{ torneio.vlr_buyinn }};
-    const VLR_REBUY_CLK   = {{ torneio.vlr_rebuy }};
-    const VLR_TXADM_CLK   = {{ torneio.vlr_txadm }};
-    const VLR_JACKPOT_CLK = {{ torneio.vlr_jackpot }};
+    const ETAPA_ID_CLOCK   = {{ etapa.id }};
+    const VLR_BUYINN_CLK   = parseFloat("{{ torneio.vlr_buyinn|stringformat:'f' }}");
+    const VLR_REBUY_CLK    = parseFloat("{{ torneio.vlr_rebuy|stringformat:'f' }}");
+    const VLR_TXADM_CLK    = parseFloat("{{ torneio.vlr_txadm|stringformat:'f' }}");
+    const VLR_JACKPOT_CLK  = parseFloat("{{ torneio.vlr_jackpot|stringformat:'f' }}");
     const TOTAL_BUYINS_CLK = {{ total_inscritos }};
     let totalRebuysClk = {{ total_rebuys }};
     let clockEliminarPlayerId  = null;
