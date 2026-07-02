@@ -290,19 +290,19 @@
       </div>
       <div class="stat">
         <span class="stat-label">Tx. Administração</span>
-        <span class="stat-value" style="color:#aaa">R$ {{ txadm|floatformat:2 }}</span>
+        <span class="stat-value" style="color:#aaa" id="stat-txadm">R$ {{ txadm|floatformat:2 }}</span>
       </div>
       <div class="stat">
         <span class="stat-label">Total Arrecadado</span>
-        <span class="stat-value" style="color:#e0e0e0">R$ {{ total_arrecadado|floatformat:2 }}</span>
+        <span class="stat-value" style="color:#e0e0e0" id="stat-arrecadado">R$ {{ total_arrecadado|floatformat:2 }}</span>
       </div>
       <div class="stat">
         <span class="stat-label">Jackpot</span>
-        <span class="stat-value" style="color:#ff9800">R$ {{ jackpot|floatformat:2 }}</span>
+        <span class="stat-value" style="color:#ff9800" id="stat-jackpot">R$ {{ jackpot|floatformat:2 }}</span>
       </div>
       <div class="stat">
         <span class="stat-label">Prize Pool</span>
-        <span class="stat-value" style="color:#28a745">R$ {{ prizepool|floatformat:2 }}</span>
+        <span class="stat-value" style="color:#28a745" id="stat-prizepool">R$ {{ prizepool|floatformat:2 }}</span>
       </div>
     </div>
 
@@ -868,9 +868,31 @@
     carregarConfigSom();
 
     // ---- Rebuy e Eliminação direto no Clock ----
-    const ETAPA_ID_CLOCK = {{ etapa.id }};
-    let clockEliminarPlayerId = null;
-    let clockEliminarRankingId = null;
+    const ETAPA_ID_CLOCK  = {{ etapa.id }};
+    const VLR_BUYINN_CLK  = {{ torneio.vlr_buyinn }};
+    const VLR_REBUY_CLK   = {{ torneio.vlr_rebuy }};
+    const VLR_TXADM_CLK   = {{ torneio.vlr_txadm }};
+    const VLR_JACKPOT_CLK = {{ torneio.vlr_jackpot }};
+    const TOTAL_BUYINS_CLK = {{ total_inscritos }};
+    let totalRebuysClk = {{ total_rebuys }};
+
+    function fmtR(v) { return 'R$ ' + v.toFixed(2).replace('.', ',').replace(/\B(?=(\d{3})+(?!\d))/g, '.'); }
+
+    function recalcularStatsClk() {
+      const txadm      = TOTAL_BUYINS_CLK * VLR_TXADM_CLK;
+      const vlrBuyins  = TOTAL_BUYINS_CLK * VLR_BUYINN_CLK;
+      const vlrRebuys  = totalRebuysClk   * VLR_REBUY_CLK;
+      const arrecadado = vlrBuyins + vlrRebuys + txadm;
+      const jackpot    = (TOTAL_BUYINS_CLK + totalRebuysClk) * VLR_JACKPOT_CLK;
+      const prizepool  = arrecadado - txadm - jackpot;
+
+      document.getElementById('stat-rebuys').textContent     = totalRebuysClk;
+      document.getElementById('stat-vlr-rebuys').textContent = fmtR(vlrRebuys);
+      document.getElementById('stat-txadm').textContent      = fmtR(txadm);
+      document.getElementById('stat-arrecadado').textContent = fmtR(arrecadado);
+      document.getElementById('stat-jackpot').textContent    = fmtR(jackpot);
+      document.getElementById('stat-prizepool').textContent  = fmtR(prizepool);
+    }
 
     function apiPostClock(url, data) {
       return fetch(url, {
@@ -911,9 +933,8 @@
           btn.querySelector('.rebuy-count').textContent = novoRebuy;
           btn.title = 'Rebuy (' + novoRebuy + '/' + maxRebuy + ')';
           if (novoRebuy >= maxRebuy) btn.disabled = true;
-          // Atualiza stat de rebuys
-          const statRebuys = document.getElementById('stat-rebuys');
-          if (statRebuys) statRebuys.textContent = parseInt(statRebuys.textContent) + 1;
+          totalRebuysClk++;
+          recalcularStatsClk();
         });
     });
 
