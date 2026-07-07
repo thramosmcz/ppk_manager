@@ -127,6 +127,19 @@ class EtapaViewSet(viewsets.ViewSet):
         ranking.save()
         return Response(RankingSerializer(ranking).data)
 
+    @rebuy.mapping.delete
+    def rebuy_del(self, request, pk=None):
+        etapa = get_object_or_404(Etapas, pk=pk)
+        player_id = request.data.get('player_id')
+        ranking = get_object_or_404(Ranking, id_etapa=etapa, id_player_id=player_id)
+
+        if ranking.qtd_rebuy <= 0:
+            return Response({'error': 'Player não possui rebuys.'}, status=status.HTTP_400_BAD_REQUEST)
+
+        ranking.qtd_rebuy -= 1
+        ranking.save()
+        return Response(RankingSerializer(ranking).data)
+
     @action(detail=True, methods=['post'])
     def eliminar(self, request, pk=None):
         etapa = get_object_or_404(Etapas, pk=pk)

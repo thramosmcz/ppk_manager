@@ -333,6 +333,10 @@
                 {% if p.qtd_rebuy >= torneio.qtd_rebuy %}disabled{% endif %}>
                 <i class="fas fa-redo"></i> <span class="rebuy-count">{{ p.qtd_rebuy }}</span>
               </button>
+              <button class="btn-clock btn-rebuy-del-clock" data-id="{{ p.id }}" data-player-id="{{ p.id_player.id }}" data-rebuy="{{ p.qtd_rebuy }}"
+                title="Remover rebuy" {% if p.qtd_rebuy == 0 %}disabled{% endif %}>
+                <i class="fas fa-minus"></i>
+              </button>
               <button class="btn-clock btn-eliminar-clock" data-id="{{ p.id }}" data-player-id="{{ p.id_player.id }}" data-nome="{{ p.id_player.player }}" title="Eliminar">
                 <i class="fas fa-skull-crossbones"></i>
               </button>
@@ -918,6 +922,38 @@
 
     // Alias para compatibilidade com carregarConfigSom
     function getCookie(name) { return getCookieClock(name); }
+
+    // Remover Rebuy
+    document.addEventListener('click', function(e) {
+      const btn = e.target.closest('.btn-rebuy-del-clock');
+      if (!btn) return;
+      const playerId  = btn.dataset.playerId;
+      const rankingId = btn.dataset.id;
+      if (parseInt(btn.dataset.rebuy) <= 0) return;
+
+      fetch('/pkapp/api/etapas/' + ETAPA_ID_CLOCK + '/rebuy/', {
+        method: 'DELETE',
+        credentials: 'same-origin',
+        headers: {'Content-Type': 'application/json', 'X-CSRFToken': CSRF_TOKEN || getCookieClock('csrftoken')},
+        body: JSON.stringify({player_id: parseInt(playerId)})
+      }).then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.error) { alert(data.error); return; }
+          const novoRebuy = data.qtd_rebuy;
+          btn.dataset.rebuy = novoRebuy;
+          // Atualiza botão de adicionar rebuy
+          const btnAdd = document.querySelector('.btn-rebuy-clock[data-id="' + rankingId + '"]');
+          if (btnAdd) {
+            btnAdd.dataset.rebuy = novoRebuy;
+            btnAdd.querySelector('.rebuy-count').textContent = novoRebuy;
+            btnAdd.disabled = false;
+            btnAdd.title = 'Rebuy (' + novoRebuy + '/' + btnAdd.dataset.max + ')';
+          }
+          btn.disabled = novoRebuy <= 0;
+          totalRebuysClk--;
+          recalcularStatsClk();
+        });
+    });
 
     // Rebuy
     document.addEventListener('click', function(e) {

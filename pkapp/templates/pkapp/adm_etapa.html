@@ -184,6 +184,12 @@
                   {% if r.qtd_rebuy >= max_rebuy %}disabled title="Limite de rebuys atingido"{% endif %}>
                   <i class="fas fa-redo"></i> Rebuy
                 </button>
+                <button class="btn btn-sm btn-outline-secondary mr-1 btn-rebuy-del"
+                  data-ranking-id="{{ r.id }}" data-player-id="{{ r.id_player.id }}"
+                  data-rebuy="{{ r.qtd_rebuy }}"
+                  {% if r.qtd_rebuy == 0 %}disabled title="Sem rebuys para remover"{% endif %}>
+                  <i class="fas fa-minus"></i>
+                </button>
                 <button class="btn btn-sm btn-outline-danger btn-eliminar"
                   data-ranking-id="{{ r.id }}" data-player-id="{{ r.id_player.id }}"
                   data-player-nome="{{ r.id_player.player }}">
@@ -380,6 +386,34 @@ document.getElementById('btnInscrever').addEventListener('click', function() {
       location.reload();
     })
     .catch(err => { alert('Erro na requisição: ' + err); });
+});
+
+// Remover Rebuy
+document.addEventListener('click', function(e) {
+  const btn = e.target.closest('.btn-rebuy-del');
+  if (!btn) return;
+  const playerId  = btn.dataset.playerId;
+  const rankingId = btn.dataset.rankingId;
+  if (parseInt(btn.dataset.rebuy) <= 0) return;
+
+  fetch('/pkapp/api/etapas/' + ETAPA_ID + '/rebuy/', {
+    method: 'DELETE',
+    credentials: 'same-origin',
+    headers: {'Content-Type': 'application/json', 'X-CSRFToken': getCookie('csrftoken')},
+    body: JSON.stringify({player_id: parseInt(playerId)})
+  }).then(r => r.json())
+    .then(data => {
+      if (data.error) { alert(data.error); return; }
+      const row = document.getElementById('row-' + rankingId);
+      const novoRebuy = data.qtd_rebuy;
+      row.querySelector('.td-rebuy').textContent = novoRebuy;
+      btn.dataset.rebuy = novoRebuy;
+      btn.disabled = novoRebuy <= 0;
+      // Reativa botão de adicionar se estava no limite
+      const btnAdd = row.querySelector('.btn-rebuy');
+      if (btnAdd) { btnAdd.disabled = false; btnAdd.dataset.rebuy = novoRebuy; }
+      recalcularFinanceiro();
+    });
 });
 
 // Rebuy
