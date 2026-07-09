@@ -521,8 +521,39 @@
     let breakTimeLeft = 0;
 
     // ---- Sistema de Áudio (Web Audio API) ----
-    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    let audioCtx = null;
     let masterVolume = 0.7;
+    let audioUnlocked = false;
+
+    function getAudioCtx() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      return audioCtx;
+    }
+
+    // Desbloqueia o AudioContext no primeiro gesto do usuário
+    function unlockAudio() {
+      if (audioUnlocked) return;
+      const ctx = getAudioCtx();
+      if (ctx.state === 'suspended') {
+        ctx.resume().then(function() { audioUnlocked = true; });
+      } else {
+        audioUnlocked = true;
+      }
+      // Toca um silêncio para garantir o desbloqueio no iOS/Android
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      gain.gain.setValueAtTime(0, ctx.currentTime);
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.start(ctx.currentTime);
+      osc.stop(ctx.currentTime + 0.001);
+    }
+
+    // Desbloqueia no primeiro toque em qualquer lugar da tela
+    document.addEventListener('touchstart', unlockAudio, { once: false });
+    document.addEventListener('click',      unlockAudio, { once: false });
 
     // Carrega configuração do servidor ao iniciar
     function carregarConfigSom() {
@@ -555,17 +586,24 @@
     }
 
     function playTone(type, freq, duration, gainVal) {
-      const ctx = audioCtx;
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = type;
-      osc.frequency.setValueAtTime(freq, ctx.currentTime);
-      gain.gain.setValueAtTime(gainVal * masterVolume, ctx.currentTime);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + duration);
+      const ctx = getAudioCtx();
+      const play = function() {
+        const osc  = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.type = type;
+        osc.frequency.setValueAtTime(freq, ctx.currentTime);
+        gain.gain.setValueAtTime(gainVal * masterVolume, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration);
+        osc.start(ctx.currentTime);
+        osc.stop(ctx.currentTime + duration);
+      };
+      if (ctx.state === 'suspended') {
+        ctx.resume().then(play);
+      } else {
+        play();
+      }
     }
 
     const SOUNDS = {
@@ -588,8 +626,12 @@
 
     function playSound(key) {
       if (!key || key === 'none') return;
-      if (audioCtx.state === 'suspended') audioCtx.resume();
-      if (SOUNDS[key]) SOUNDS[key]();
+      const ctx = getAudioCtx();
+      if (ctx.state === 'suspended') {
+        ctx.resume().then(function() { if (SOUNDS[key]) SOUNDS[key](); });
+      } else {
+        if (SOUNDS[key]) SOUNDS[key]();
+      }
     }
 
     function getSoundConfig() {
@@ -613,7 +655,8 @@
 
     // Modal sons
     document.getElementById('btnSound').addEventListener('click', function() {
-      if (audioCtx.state === 'suspended') audioCtx.resume();
+      const ctx = getAudioCtx();
+      if (ctx.state === 'suspended') ctx.resume();
       document.getElementById('modalSound').classList.add('open');
     });
     document.getElementById('btnCloseSound').addEventListener('click', function() {
