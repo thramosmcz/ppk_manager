@@ -331,7 +331,7 @@
               <button class="btn-clock btn-rebuy-clock" data-id="{{ p.id }}" data-player-id="{{ p.id_player.id }}" data-rebuy="{{ p.qtd_rebuy }}" data-max="{{ torneio.qtd_rebuy }}"
                 title="Rebuy ({{ p.qtd_rebuy }}/{{ torneio.qtd_rebuy }})"
                 {% if p.qtd_rebuy >= torneio.qtd_rebuy %}disabled{% endif %}>
-                <i class="fas fa-redo"></i> <span class="rebuy-count">{{ p.qtd_rebuy }}</span>
+                <i class="fas fa-plus"></i> <span class="rebuy-count">{{ p.qtd_rebuy }}</span>
               </button>
               <button class="btn-clock btn-rebuy-del-clock" data-id="{{ p.id }}" data-player-id="{{ p.id_player.id }}" data-rebuy="{{ p.qtd_rebuy }}"
                 title="Remover rebuy" {% if p.qtd_rebuy == 0 %}disabled{% endif %}>
