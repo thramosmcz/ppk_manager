@@ -974,6 +974,9 @@
           btn.querySelector('.rebuy-count').textContent = novoRebuy;
           btn.title = 'Rebuy (' + novoRebuy + '/' + maxRebuy + ')';
           if (novoRebuy >= maxRebuy) btn.disabled = true;
+          // Habilita botão de remover rebuy
+          const btnDel = document.querySelector('.btn-rebuy-del-clock[data-id="' + rankingId + '"]');
+          if (btnDel) { btnDel.disabled = false; btnDel.dataset.rebuy = novoRebuy; }
           totalRebuysClk++;
           recalcularStatsClk();
         });
