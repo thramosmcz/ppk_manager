@@ -385,6 +385,9 @@
     <button class="btn btn-prev" id="btnPrev" title="Nível anterior"><i class="fas fa-step-backward"></i></button>
     <button class="btn btn-play" id="btnPlay"><i class="fas fa-play"></i></button>
     <button class="btn btn-pause" id="btnPause" style="display:none"><i class="fas fa-pause"></i></button>
+    <input type="range" id="timeSeek" min="0" max="100" value="100"
+      title="Arraste para ajustar o tempo"
+      style="width:180px;accent-color:#c9a84c;cursor:pointer;height:6px;border-radius:3px">
     <button class="btn btn-break" id="btnBreak" title="Iniciar break"><i class="fas fa-coffee"></i> Break</button>
     <button class="btn btn-next" id="btnNext" title="Próximo nível"><i class="fas fa-step-forward"></i></button>
     <button class="btn btn-reset" id="btnReset" title="Reiniciar"><i class="fas fa-redo"></i></button>
@@ -805,6 +808,7 @@
         if (breakTimeLeft > 0) {
           breakTimeLeft--;
           updateDisplay();
+          updateSeekBar();
         } else {
           onBreak = false;
           const btnBreak = document.getElementById('btnBreak');
@@ -823,6 +827,7 @@
         // Alerta 1 minuto restante (dispara exatamente em 60)
         if (timeLeft === 60) playSound(cfg.s1min);
         updateDisplay();
+        updateSeekBar();
       } else {
         const level = BLINDS_STRUCTURE[currentLevel];
         // Som de mudança de blind
@@ -867,11 +872,46 @@
       onBreak = false;
       breakTimeLeft = 0;
       updateDisplay();
+      updateSeekBar();
     }
 
     document.getElementById('btnPlay').addEventListener('click', play);
     document.getElementById('btnPause').addEventListener('click', pause);
     document.getElementById('btnReset').addEventListener('click', reset);
+
+    // Seek bar — arrastar para ajustar o tempo
+    const timeSeek = document.getElementById('timeSeek');
+    let isSeeking = false;
+
+    timeSeek.addEventListener('mousedown',  function() { isSeeking = true; });
+    timeSeek.addEventListener('touchstart', function() { isSeeking = true; }, {passive: true});
+
+    timeSeek.addEventListener('input', function() {
+      const duration = onBreak
+        ? (BLINDS_STRUCTURE[currentLevel].breakAfter || 600)
+        : BLINDS_STRUCTURE[currentLevel].duration;
+      const pct = parseInt(this.value) / 100;
+      if (onBreak) {
+        breakTimeLeft = Math.round(duration * pct);
+      } else {
+        timeLeft = Math.round(duration * pct);
+      }
+      updateDisplay();
+    });
+
+    timeSeek.addEventListener('mouseup',  function() { isSeeking = false; });
+    timeSeek.addEventListener('touchend', function() { isSeeking = false; });
+
+    // Atualiza o slider a cada tick (só quando não está sendo arrastado)
+    function updateSeekBar() {
+      if (isSeeking) return;
+      const duration = onBreak
+        ? (BLINDS_STRUCTURE[currentLevel].breakAfter || 600)
+        : BLINDS_STRUCTURE[currentLevel].duration;
+      const current  = onBreak ? breakTimeLeft : timeLeft;
+      timeSeek.max   = 100;
+      timeSeek.value = duration > 0 ? Math.round((current / duration) * 100) : 0;
+    }
 
     document.getElementById('btnPrev').addEventListener('click', function() {
       pause();
