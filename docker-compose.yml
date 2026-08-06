@@ -1,6 +1,7 @@
 services:
   web:
     build: .
+    env_file: .env
     environment:
       - DB_ENGINE=sqlite
       - SQLITE_PATH=/data/db.sqlite3
@@ -11,3 +12,4 @@ services:
 
 volumes:
   sqlite_data:
+    driver: local
